@@ -1,5 +1,5 @@
 // src/components/collage/SceneSettings.tsx - COMPLETE OPTIMIZED VERSION
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { 
   Camera, Lightbulb, Palette, Play, Pause, RotateCcw, Video, Monitor, 
   Grid, ImageIcon, Square, Sun, Move, Eye, CameraIcon 
@@ -17,9 +17,9 @@ interface SceneSettingsProps {
 // PERFORMANCE: Debounced input hook to prevent excessive updates during dragging
 const useDebouncedValue = (value: number, delay: number, onChange: (value: number) => void) => {
   const [localValue, setLocalValue] = useState(value);
-  const timeoutRef = React.useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setLocalValue(value);
   }, [value]);
 
@@ -35,6 +35,15 @@ const useDebouncedValue = (value: number, delay: number, onChange: (value: numbe
     }, delay);
   }, [onChange, delay]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   return [localValue, handleChange] as const;
 };
 
@@ -44,11 +53,22 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
   // Performance optimization - temporarily disabled until PerformanceMonitor is available
   // const { performanceLevel, optimizedSettings, setPerformanceLevel } = usePerformanceOptimization();
   const performanceLevel = 'high'; // Fallback
-  const optimizedSettings = { shadowsEnabled: true, photoSize: 4.0, animationSpeed: 50 }; // Fallback
+  const optimizedSettings = { 
+    shadowsEnabled: true, 
+    photoSize: 4.0, 
+    animationSpeed: 50,
+    maxPhotos: 200,
+    textureSize: 512,
+    anisotropy: 4,
+  }; // Fallback
   
   // OPTIMIZED: Memoized change handlers to prevent unnecessary re-renders
   const handleSettingsChange = useCallback((newSettings: Partial<SceneSettings>, debounce = true) => {
-    onSettingsChange(newSettings, debounce);
+    try {
+      onSettingsChange(newSettings, debounce);
+    } catch (error) {
+      console.error('Error updating settings:', error);
+    }
   }, [onSettingsChange]);
 
   // PERFORMANCE: Debounced sliders for smooth interaction
@@ -78,18 +98,22 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
 
   // PERFORMANCE: Apply optimized settings automatically
   const applyPerformanceOptimizations = useCallback(() => {
-    handleSettingsChange({
-      ...optimizedSettings,
-      shadowsEnabled: optimizedSettings.shadowsEnabled,
-      photoSize: optimizedSettings.photoSize,
-      animationSpeed: optimizedSettings.animationSpeed,
-    }, false);
+    try {
+      handleSettingsChange({
+        shadowsEnabled: optimizedSettings.shadowsEnabled,
+        photoSize: optimizedSettings.photoSize,
+        animationSpeed: optimizedSettings.animationSpeed,
+      }, false);
+    } catch (error) {
+      console.error('Error applying performance optimizations:', error);
+    }
   }, [optimizedSettings, handleSettingsChange]);
 
   // CRITICAL: Pattern-specific camera movement conflict resolution
-  const currentPattern = settings.animationPattern;
-  const isPatternCameraEnabled = settings.patterns?.[currentPattern]?.cameraMovementEnabled;
-  const isGlobalRotationEnabled = settings.cameraRotationEnabled;
+  const currentPattern = settings.animationPattern || 'grid';
+  const patterns = settings.patterns || {};
+  const isPatternCameraEnabled = patterns[currentPattern]?.cameraMovementEnabled || false;
+  const isGlobalRotationEnabled = settings.cameraRotationEnabled || false;
 
 // PERFORMANCE: Debounced input hook to prevent excessive updates during dragging
 const useDebouncedValue = (value: number, delay: number, onChange: (value: number) => void) => {
@@ -253,9 +277,9 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
                   animationEnabled: false,
                   cameraRotationEnabled: false,
                   patterns: {
-                    ...settings.patterns,
+                    ...patterns,
                     [currentPattern]: {
-                      ...settings.patterns?.[currentPattern],
+                      ...patterns[currentPattern],
                       cameraMovementEnabled: false
                     }
                   }
@@ -486,7 +510,7 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  checked={isGlobalRotationEnabled || false}
+                  checked={isGlobalRotationEnabled}
                   onChange={(e) => handleSettingsChange({ cameraRotationEnabled: e.target.checked }, false)}
                   className="mr-2 bg-gray-800 border-gray-700"
                 />
@@ -590,12 +614,12 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  checked={isPatternCameraEnabled || false}
+                  checked={isPatternCameraEnabled}
                   onChange={(e) => handleSettingsChange({
                     patterns: {
-                      ...settings.patterns,
+                      ...patterns,
                       [currentPattern]: {
-                        ...settings.patterns?.[currentPattern],
+                        ...patterns[currentPattern],
                         cameraMovementEnabled: e.target.checked
                       }
                     }
@@ -614,18 +638,18 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
               {isPatternCameraEnabled && currentPattern === 'float' && (
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">
-                    Float Intensity: {((settings.patterns?.float?.cameraFloatIntensity || 1) * 100).toFixed(0)}%
+                    Float Intensity: {((patterns.float?.cameraFloatIntensity || 1) * 100).toFixed(0)}%
                   </label>
                   <input
                     type="range"
                     min="10"
                     max="200"
-                    value={(settings.patterns?.float?.cameraFloatIntensity || 1) * 100}
+                    value={(patterns.float?.cameraFloatIntensity || 1) * 100}
                     onChange={(e) => handleSettingsChange({
                       patterns: {
-                        ...settings.patterns,
+                        ...patterns,
                         float: {
-                          ...settings.patterns?.float,
+                          ...patterns.float,
                           cameraFloatIntensity: Number(e.target.value) / 100
                         }
                       }
@@ -638,18 +662,18 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
               {isPatternCameraEnabled && currentPattern === 'wave' && (
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">
-                    Wave Amplitude: {((settings.patterns?.wave?.cameraWaveAmplitude || 1) * 100).toFixed(0)}%
+                    Wave Amplitude: {((patterns.wave?.cameraWaveAmplitude || 1) * 100).toFixed(0)}%
                   </label>
                   <input
                     type="range"
                     min="10"
                     max="200"
-                    value={(settings.patterns?.wave?.cameraWaveAmplitude || 1) * 100}
+                    value={(patterns.wave?.cameraWaveAmplitude || 1) * 100}
                     onChange={(e) => handleSettingsChange({
                       patterns: {
-                        ...settings.patterns,
+                        ...patterns,
                         wave: {
-                          ...settings.patterns?.wave,
+                          ...patterns.wave,
                           cameraWaveAmplitude: Number(e.target.value) / 100
                         }
                       }
@@ -663,18 +687,18 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm text-gray-300 mb-2">
-                      Orbit Speed: {((settings.patterns?.spiral?.cameraOrbitSpeed || 1) * 100).toFixed(0)}%
+                      Orbit Speed: {((patterns.spiral?.cameraOrbitSpeed || 1) * 100).toFixed(0)}%
                     </label>
                     <input
                       type="range"
                       min="10"
                       max="200"
-                      value={(settings.patterns?.spiral?.cameraOrbitSpeed || 1) * 100}
+                      value={(patterns.spiral?.cameraOrbitSpeed || 1) * 100}
                       onChange={(e) => handleSettingsChange({
                         patterns: {
-                          ...settings.patterns,
+                          ...patterns,
                           spiral: {
-                            ...settings.patterns?.spiral,
+                            ...patterns.spiral,
                             cameraOrbitSpeed: Number(e.target.value) / 100
                           }
                         }
@@ -685,18 +709,18 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
                   
                   <div>
                     <label className="block text-sm text-gray-300 mb-2">
-                      Orbit Radius: {(settings.patterns?.spiral?.cameraOrbitRadius || 20)} units
+                      Orbit Radius: {(patterns.spiral?.cameraOrbitRadius || 20)} units
                     </label>
                     <input
                       type="range"
                       min="10"
                       max="50"
-                      value={settings.patterns?.spiral?.cameraOrbitRadius || 20}
+                      value={patterns.spiral?.cameraOrbitRadius || 20}
                       onChange={(e) => handleSettingsChange({
                         patterns: {
-                          ...settings.patterns,
+                          ...patterns,
                           spiral: {
-                            ...settings.patterns?.spiral,
+                            ...patterns.spiral,
                             cameraOrbitRadius: Number(e.target.value)
                           }
                         }

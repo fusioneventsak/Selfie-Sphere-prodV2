@@ -1,8 +1,8 @@
-// src/components/three/patterns/GridPattern.tsx - FIXED: True edge-to-edge solid wall
+// src/components/three/patterns/GridPattern.tsx - FIXED: True edge-to-edge solid wall with proper inheritance
 import { BasePattern, type PatternState, type Position } from './BasePattern';
 
 export class GridPattern extends BasePattern {
-  generatePositions(time: number): PatternState {
+  protected generatePositionsInternal(time: number): PatternState {
     const positions: Position[] = [];
     const rotations: [number, number, number][] = [];
     
@@ -48,37 +48,50 @@ export class GridPattern extends BasePattern {
       const col = i % columns;
       const row = Math.floor(i / columns);
       
-      // Base position - centered wall
-      const x = (col * horizontalSpacing) - (totalWallWidth / 2);
-      const baseY = wallHeight + (row * verticalSpacing);
-      
+      // Calculate base grid position (centered)
+      let x = (col - (columns - 1) / 2) * horizontalSpacing;
+      let y = wallHeight + (row - (rows - 1) / 2) * verticalSpacing;
       let z = 0;
-      let y = baseY;
       
-      // Subtle animation when enabled (only when there's spacing)
-      if (this.settings.animationEnabled && spacingPercentage > 0) {
-        const waveIntensity = spacingPercentage * photoSize * 0.2; // Scale with spacing
+      // ENHANCED: Grid-specific animation effects
+      if (this.settings.animationEnabled) {
+        // Option 1: Wave effect across the grid
+        const wavePhase = animationTime * 2;
+        const waveAmplitude = 2;
+        const waveFrequency = 0.1;
         
-        const waveX = Math.sin(animationTime * 0.5 + col * 0.3) * waveIntensity;
-        const waveY = Math.cos(animationTime * 0.5 + row * 0.3) * waveIntensity;
+        // Create wave based on position in grid
+        const gridDistance = Math.sqrt(
+          Math.pow(col - columns / 2, 2) + Math.pow(row - rows / 2, 2)
+        );
         
-        y += waveY;
-        z += waveX;
+        z += Math.sin(wavePhase + gridDistance * waveFrequency) * waveAmplitude;
         
-        // Keep above minimum wall height
-        y = Math.max(y, wallHeight);
+        // Option 2: Subtle breathing effect
+        const breathingAmplitude = 0.5;
+        z += Math.sin(animationTime * 0.8 + i * 0.1) * breathingAmplitude;
+        
+        // Option 3: Random gentle movements
+        const randomOffsetX = Math.sin(animationTime * 0.3 + i * 0.7) * 0.3;
+        const randomOffsetY = Math.cos(animationTime * 0.4 + i * 0.9) * 0.3;
+        
+        x += randomOffsetX;
+        y += randomOffsetY;
       }
       
       positions.push([x, y, z]);
       
-      // Rotation handling
+      // Calculate rotations if photo rotation is enabled
       if (this.settings.photoRotation) {
-        let rotationX = 0, rotationY = 0, rotationZ = 0;
+        let rotationX = 0;
+        let rotationY = 0;
+        let rotationZ = 0;
         
-        if (this.settings.animationEnabled && spacingPercentage > 0) {
-          rotationY = Math.atan2(x, z + 10);
-          rotationX = Math.sin(animationTime * 0.3 + col * 0.1) * 0.05;
-          rotationZ = Math.cos(animationTime * 0.3 + row * 0.1) * 0.05;
+        if (this.settings.animationEnabled) {
+          // Gentle rotation animations
+          rotationX = Math.sin(animationTime * 0.6 + i * 0.4) * 0.05;
+          rotationY = Math.cos(animationTime * 0.5 + i * 0.6) * 0.03;
+          rotationZ = Math.sin(animationTime * 0.7 + i * 0.8) * 0.02;
         }
         
         rotations.push([rotationX, rotationY, rotationZ]);
@@ -86,7 +99,7 @@ export class GridPattern extends BasePattern {
         rotations.push([0, 0, 0]);
       }
     }
-    
+
     return { positions, rotations };
   }
 }

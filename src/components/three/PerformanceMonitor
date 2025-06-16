@@ -1,0 +1,191 @@
+// src/components/three/PerformanceMonitor.tsx - Performance Monitoring and Optimization
+import React, { useRef, useEffect, useState } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
+
+interface PerformanceStats {
+  fps: number;
+  frameTime: number;
+  drawCalls: number;
+  triangles: number;
+  memory: number;
+}
+
+interface PerformanceMonitorProps {
+  enabled?: boolean;
+  onPerformanceChange?: (stats: PerformanceStats) => void;
+  targetFPS?: number;
+}
+
+const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
+  enabled = true,
+  onPerformanceChange,
+  targetFPS = 60
+}) => {
+  const { gl } = useThree();
+  const frameCountRef = useRef(0);
+  const lastTimeRef = useRef(performance.now());
+  const fpsRef = useRef(60);
+  const [stats, setStats] = useState<PerformanceStats>({
+    fps: 60,
+    frameTime: 16.67,
+    drawCalls: 0,
+    triangles: 0,
+    memory: 0
+  });
+
+  // Performance tracking
+  useFrame(() => {
+    if (!enabled) return;
+
+    frameCountRef.current++;
+    const now = performance.now();
+    const deltaTime = now - lastTimeRef.current;
+
+    // Update FPS every second
+    if (deltaTime >= 1000) {
+      const fps = Math.round((frameCountRef.current * 1000) / deltaTime);
+      const frameTime = deltaTime / frameCountRef.current;
+      
+      fpsRef.current = fps;
+      
+      // Get render info
+      const info = gl.info;
+      const newStats: PerformanceStats = {
+        fps,
+        frameTime,
+        drawCalls: info.render.calls,
+        triangles: info.render.triangles,
+        memory: (performance as any).memory?.usedJSHeapSize / (1024 * 1024) || 0
+      };
+
+      setStats(newStats);
+      onPerformanceChange?.(newStats);
+
+      // Reset counters
+      frameCountRef.current = 0;
+      lastTimeRef.current = now;
+      
+      // Auto-optimization based on performance
+      if (fps < targetFPS * 0.8) {
+        console.warn(`Performance below target: ${fps}fps < ${targetFPS}fps`);
+        // Could trigger automatic quality reduction here
+      }
+    }
+  });
+
+  return null;
+};
+
+// Performance optimization utilities
+export class PerformanceOptimizer {
+  private static instance: PerformanceOptimizer;
+  private performanceLevel: 'high' | 'medium' | 'low' = 'high';
+  private frameTimeHistory: number[] = [];
+  private maxHistoryLength = 60; // 1 second at 60fps
+
+  static getInstance(): PerformanceOptimizer {
+    if (!this.instance) {
+      this.instance = new PerformanceOptimizer();
+    }
+    return this.instance;
+  }
+
+  // Track frame performance
+  trackFrame(frameTime: number) {
+    this.frameTimeHistory.push(frameTime);
+    if (this.frameTimeHistory.length > this.maxHistoryLength) {
+      this.frameTimeHistory.shift();
+    }
+
+    // Analyze performance trend
+    if (this.frameTimeHistory.length >= 30) {
+      const avgFrameTime = this.frameTimeHistory.reduce((a, b) => a + b, 0) / this.frameTimeHistory.length;
+      const fps = 1000 / avgFrameTime;
+
+      // Adjust performance level based on FPS
+      if (fps < 30) {
+        this.performanceLevel = 'low';
+      } else if (fps < 50) {
+        this.performanceLevel = 'medium';
+      } else {
+        this.performanceLevel = 'high';
+      }
+    }
+  }
+
+  // Get optimized settings based on current performance
+  getOptimizedSettings() {
+    switch (this.performanceLevel) {
+      case 'low':
+        return {
+          shadowsEnabled: false,
+          photoSize: 3.0,
+          animationSpeed: 25,
+          maxPhotos: 50,
+          textureSize: 256,
+          anisotropy: 1,
+        };
+      case 'medium':
+        return {
+          shadowsEnabled: false,
+          photoSize: 3.5,
+          animationSpeed: 35,
+          maxPhotos: 100,
+          textureSize: 512,
+          anisotropy: 2,
+        };
+      case 'high':
+      default:
+        return {
+          shadowsEnabled: true,
+          photoSize: 4.0,
+          animationSpeed: 50,
+          maxPhotos: 200,
+          textureSize: 512,
+          anisotropy: 4,
+        };
+    }
+  }
+
+  getPerformanceLevel() {
+    return this.performanceLevel;
+  }
+
+  // Force performance level (for manual override)
+  setPerformanceLevel(level: 'high' | 'medium' | 'low') {
+    this.performanceLevel = level;
+  }
+}
+
+// React hook for performance optimization
+export const usePerformanceOptimization = (enabled = true) => {
+  const optimizer = PerformanceOptimizer.getInstance();
+  const [performanceLevel, setPerformanceLevel] = useState(optimizer.getPerformanceLevel());
+  const [optimizedSettings, setOptimizedSettings] = useState(optimizer.getOptimizedSettings());
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const interval = setInterval(() => {
+      const currentLevel = optimizer.getPerformanceLevel();
+      if (currentLevel !== performanceLevel) {
+        setPerformanceLevel(currentLevel);
+        setOptimizedSettings(optimizer.getOptimizedSettings());
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [enabled, performanceLevel]);
+
+  return {
+    performanceLevel,
+    optimizedSettings,
+    setPerformanceLevel: (level: 'high' | 'medium' | 'low') => {
+      optimizer.setPerformanceLevel(level);
+      setPerformanceLevel(level);
+      setOptimizedSettings(optimizer.getOptimizedSettings());
+    }
+  };
+};
+
+export default PerformanceMonitor;

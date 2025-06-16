@@ -14,8 +14,8 @@ export { BasePattern };
 export class PatternFactory {
   private static patternInstances = new Map<string, BasePattern>();
   
-  // PERFORMANCE: Get or create pattern instance (cached)
-  static getPattern(settings: SceneSettings): BasePattern {
+  // PERFORMANCE: Get or create pattern instance (cached) - matches existing usage
+  static createPattern(patternType: string, settings: SceneSettings): BasePattern {
     const patternType = settings.animationPattern || 'grid';
     const cacheKey = `${patternType}-${settings.photoCount}-${settings.floorSize}`;
     
@@ -52,6 +52,12 @@ export class PatternFactory {
     }
     
     return pattern;
+  }
+  
+  // BACKWARDS COMPATIBILITY: Also provide getPattern method
+  static getPattern(settings: SceneSettings): BasePattern {
+    const patternType = settings.animationPattern || 'grid';
+    return PatternFactory.createPattern(patternType, settings);
   }
   
   // CLEANUP: Clear cached patterns (call when settings change dramatically)

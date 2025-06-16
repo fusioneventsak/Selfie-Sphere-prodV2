@@ -1,116 +1,29 @@
-// src/components/three/patterns/PatternFactory.tsx - PERFORMANCE OPTIMIZED
+// src/components/three/patterns/PatternFactory.tsx - FIXED: Consistent pattern factory
 import { type SceneSettings } from '../../../store/sceneStore';
+import { BasePattern, type PatternState, type Position } from './BasePattern';
 import { GridPattern } from './GridPattern';
 import { FloatPattern } from './FloatPattern';
 import { WavePattern } from './WavePattern';
 import { SpiralPattern } from './SpiralPattern';
 
-export type Position = [number, number, number];
+// Export types for external use
+export type { Position, PatternState };
+export { BasePattern };
 
-export interface PatternState {
-  positions: Position[];
-  rotations?: [number, number, number][];
-}
-
-// OPTIMIZED: Base pattern with performance improvements
-export abstract class BasePattern {
-  protected settings: SceneSettings;
-  protected lastTime: number = 0;
-  protected cachedState: PatternState | null = null;
-  protected cacheTimeout: number = 0;
-  
-  // PERFORMANCE: Cache management
-  private static readonly CACHE_DURATION = 16.67; // ~60fps cache invalidation
-  private positionCache = new Map<string, PatternState>();
-  private cacheTimestamps = new Map<string, number>();
-
-  constructor(settings: SceneSettings) {
-    this.settings = settings;
-  }
-
-  // CRITICAL: Cache key generation for position stability
-  protected getCacheKey(time: number): string {
-    // Round time to reduce cache fragmentation while maintaining smoothness
-    const roundedTime = Math.floor(time * 60) / 60; // 60fps granularity
-    return `${this.settings.animationPattern}-${roundedTime}-${this.settings.photoCount}-${this.settings.animationSpeed}`;
-  }
-
-  // PERFORMANCE: Cached position generation
-  generatePositions(time: number): PatternState {
-    const now = performance.now();
-    const cacheKey = this.getCacheKey(time);
-    
-    // Check cache first
-    const cached = this.positionCache.get(cacheKey);
-    const cacheTime = this.cacheTimestamps.get(cacheKey);
-    
-    if (cached && cacheTime && (now - cacheTime) < BasePattern.CACHE_DURATION) {
-      return cached;
-    }
-    
-    // Generate new positions
-    const state = this.generatePositionsInternal(time);
-    
-    // Cache the result
-    this.positionCache.set(cacheKey, state);
-    this.cacheTimestamps.set(cacheKey, now);
-    
-    // Clean old cache entries (memory management)
-    if (this.positionCache.size > 100) {
-      this.cleanCache(now);
-    }
-    
-    return state;
-  }
-
-  // Clean expired cache entries
-  private cleanCache(now: number) {
-    for (const [key, timestamp] of this.cacheTimestamps.entries()) {
-      if (now - timestamp > BasePattern.CACHE_DURATION * 10) {
-        this.positionCache.delete(key);
-        this.cacheTimestamps.delete(key);
-      }
-    }
-  }
-
-  // Abstract method to be implemented by concrete patterns
-  protected abstract generatePositionsInternal(time: number): PatternState;
-
-  // Update settings and clear cache if necessary
-  updateSettings(newSettings: SceneSettings) {
-    const settingsChanged = 
-      this.settings.photoCount !== newSettings.photoCount ||
-      this.settings.animationSpeed !== newSettings.animationSpeed ||
-      this.settings.animationPattern !== newSettings.animationPattern;
-    
-    if (settingsChanged) {
-      this.positionCache.clear();
-      this.cacheTimestamps.clear();
-    }
-    
-    this.settings = newSettings;
-  }
-}
-
-// OPTIMIZED: Pattern factory with caching and error handling
+// OPTIMIZED: Pattern factory with proper caching and reuse
 export class PatternFactory {
   private static patternInstances = new Map<string, BasePattern>();
   
-  // PERFORMANCE: Reuse pattern instances when possible
-  static createPattern(patternType: string, settings: SceneSettings): BasePattern {
-    const cacheKey = `${patternType}-${settings.photoCount}`;
+  // PERFORMANCE: Get or create pattern instance (cached)
+  static getPattern(settings: SceneSettings): BasePattern {
+    const patternType = settings.animationPattern || 'grid';
+    const cacheKey = `${patternType}-${settings.photoCount}-${settings.floorSize}`;
     
-    // Try to reuse existing instance
-    const existing = this.patternInstances.get(cacheKey);
-    if (existing) {
-      existing.updateSettings(settings);
-      return existing;
-    }
+    // Check if we have a cached instance
+    let pattern = PatternFactory.patternInstances.get(cacheKey);
     
-    // Create new instance
-    let pattern: BasePattern;
-    
-    try {
+    if (!pattern) {
+      // Create new pattern instance
       switch (patternType) {
         case 'grid':
           pattern = new GridPattern(settings);
@@ -127,25 +40,28 @@ export class PatternFactory {
         default:
           console.warn(`Unknown pattern type: ${patternType}, falling back to grid`);
           pattern = new GridPattern(settings);
+          break;
       }
-    } catch (error) {
-      console.error(`Error creating pattern ${patternType}:`, error);
-      pattern = new GridPattern(settings); // Safe fallback
-    }
-    
-    // Cache the instance
-    this.patternInstances.set(cacheKey, pattern);
-    
-    // Clean cache if it gets too large
-    if (this.patternInstances.size > 20) {
-      this.patternInstances.clear(); // Simple cleanup strategy
+      
+      // Cache the instance
+      PatternFactory.patternInstances.set(cacheKey, pattern);
+      console.log(`🏭 FACTORY: Created new ${patternType} pattern instance`);
+    } else {
+      // Update existing pattern with new settings
+      pattern.updateSettings(settings);
     }
     
     return pattern;
   }
   
-  // Clear all cached instances (useful for memory management)
+  // CLEANUP: Clear cached patterns (call when settings change dramatically)
   static clearCache() {
-    this.patternInstances.clear();
+    PatternFactory.patternInstances.clear();
+    console.log('🏭 FACTORY: Pattern cache cleared');
+  }
+  
+  // UTILITY: Get available pattern types
+  static getAvailablePatterns(): string[] {
+    return ['grid', 'float', 'wave', 'spiral'];
   }
 }

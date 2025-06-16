@@ -1,12 +1,10 @@
-// src/components/collage/SceneSettings.tsx - COMPLETE OPTIMIZED VERSION
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+// src/components/collage/SceneSettings.tsx - FIXED VERSION
+import React, { useState, useCallback } from 'react';
 import { 
   Camera, Lightbulb, Palette, Play, Pause, RotateCcw, Video, Monitor, 
   Grid, ImageIcon, Square, Sun, Move, Eye, CameraIcon 
 } from 'lucide-react';
 import { type SceneSettings } from '../../store/sceneStore';
-// Note: Import this when PerformanceMonitor is available
-// import { usePerformanceOptimization } from '../three/PerformanceMonitor';
 
 interface SceneSettingsProps {
   settings: SceneSettings;
@@ -14,53 +12,8 @@ interface SceneSettingsProps {
   onReset: () => void;
 }
 
-// PERFORMANCE: Debounced input hook to prevent excessive updates during dragging
-const useDebouncedValue = (value: number, delay: number, onChange: (value: number) => void) => {
-  const [localValue, setLocalValue] = useState(value);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
-
-  const handleChange = useCallback((newValue: number) => {
-    setLocalValue(newValue);
-    
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    timeoutRef.current = setTimeout(() => {
-      onChange(newValue);
-    }, delay);
-  }, [onChange, delay]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return [localValue, handleChange] as const;
-};
-
 const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChange, onReset }) => {
   const [activeTab, setActiveTab] = useState<'animation' | 'camera' | 'lighting' | 'appearance' | 'performance'>('animation');
-  
-  // Performance optimization - temporarily disabled until PerformanceMonitor is available
-  // const { performanceLevel, optimizedSettings, setPerformanceLevel } = usePerformanceOptimization();
-  const performanceLevel = 'high'; // Fallback
-  const optimizedSettings = { 
-    shadowsEnabled: true, 
-    photoSize: 4.0, 
-    animationSpeed: 50,
-    maxPhotos: 200,
-    textureSize: 512,
-    anisotropy: 4,
-  }; // Fallback
   
   // OPTIMIZED: Memoized change handlers to prevent unnecessary re-renders
   const handleSettingsChange = useCallback((newSettings: Partial<SceneSettings>, debounce = true) => {
@@ -71,124 +24,11 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
     }
   }, [onSettingsChange]);
 
-  // PERFORMANCE: Debounced sliders for smooth interaction
-  const [photoSize, setPhotoSize] = useDebouncedValue(
-    settings.photoSize || 4.0,
-    100,
-    (value) => handleSettingsChange({ photoSize: value })
-  );
-
-  const [animationSpeed, setAnimationSpeed] = useDebouncedValue(
-    settings.animationSpeed || 50,
-    100,
-    (value) => handleSettingsChange({ animationSpeed: value })
-  );
-
-  const [cameraDistance, setCameraDistance] = useDebouncedValue(
-    settings.cameraDistance || 25,
-    100,
-    (value) => handleSettingsChange({ cameraDistance: value })
-  );
-
-  const [cameraHeight, setCameraHeight] = useDebouncedValue(
-    settings.cameraHeight || 10,
-    100,
-    (value) => handleSettingsChange({ cameraHeight: value })
-  );
-
-  // PERFORMANCE: Apply optimized settings automatically
-  const applyPerformanceOptimizations = useCallback(() => {
-    try {
-      handleSettingsChange({
-        shadowsEnabled: optimizedSettings.shadowsEnabled,
-        photoSize: optimizedSettings.photoSize,
-        animationSpeed: optimizedSettings.animationSpeed,
-      }, false);
-    } catch (error) {
-      console.error('Error applying performance optimizations:', error);
-    }
-  }, [optimizedSettings, handleSettingsChange]);
-
   // CRITICAL: Pattern-specific camera movement conflict resolution
   const currentPattern = settings.animationPattern || 'grid';
   const patterns = settings.patterns || {};
   const isPatternCameraEnabled = patterns[currentPattern]?.cameraMovementEnabled || false;
   const isGlobalRotationEnabled = settings.cameraRotationEnabled || false;
-
-// PERFORMANCE: Debounced input hook to prevent excessive updates during dragging
-const useDebouncedValue = (value: number, delay: number, onChange: (value: number) => void) => {
-  const [localValue, setLocalValue] = useState(value);
-  const timeoutRef = React.useRef<NodeJS.Timeout>();
-
-  React.useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
-
-  const handleChange = useCallback((newValue: number) => {
-    setLocalValue(newValue);
-    
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    timeoutRef.current = setTimeout(() => {
-      onChange(newValue);
-    }, delay);
-  }, [onChange, delay]);
-
-  return [localValue, handleChange] as const;
-};
-
-const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChange }) => {
-  const [activeTab, setActiveTab] = useState<'animation' | 'camera' | 'lighting' | 'appearance' | 'performance'>('animation');
-  
-  // Performance optimization
-  const { performanceLevel, optimizedSettings, setPerformanceLevel } = usePerformanceOptimization();
-  
-  // OPTIMIZED: Memoized change handlers to prevent unnecessary re-renders
-  const handleSettingsChange = useCallback((newSettings: Partial<SceneSettings>, debounce = true) => {
-    onSettingsChange(newSettings, debounce);
-  }, [onSettingsChange]);
-
-  // PERFORMANCE: Debounced sliders for smooth interaction
-  const [photoSize, setPhotoSize] = useDebouncedValue(
-    settings.photoSize || 4.0,
-    100,
-    (value) => handleSettingsChange({ photoSize: value })
-  );
-
-  const [animationSpeed, setAnimationSpeed] = useDebouncedValue(
-    settings.animationSpeed || 50,
-    100,
-    (value) => handleSettingsChange({ animationSpeed: value })
-  );
-
-  const [cameraDistance, setCameraDistance] = useDebouncedValue(
-    settings.cameraDistance || 25,
-    100,
-    (value) => handleSettingsChange({ cameraDistance: value })
-  );
-
-  const [cameraHeight, setCameraHeight] = useDebouncedValue(
-    settings.cameraHeight || 10,
-    100,
-    (value) => handleSettingsChange({ cameraHeight: value })
-  );
-
-  // PERFORMANCE: Apply optimized settings automatically
-  const applyPerformanceOptimizations = useCallback(() => {
-    handleSettingsChange({
-      ...optimizedSettings,
-      shadowsEnabled: optimizedSettings.shadowsEnabled,
-      photoSize: optimizedSettings.photoSize,
-      animationSpeed: optimizedSettings.animationSpeed,
-    }, false);
-  }, [optimizedSettings, handleSettingsChange]);
-
-  // CRITICAL: Pattern-specific camera movement conflict resolution
-  const currentPattern = settings.animationPattern;
-  const isPatternCameraEnabled = settings.patterns[currentPattern]?.cameraMovementEnabled;
-  const isGlobalRotationEnabled = settings.cameraRotationEnabled;
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-4">
@@ -200,19 +40,9 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
         </h4>
         <div className="flex items-center space-x-2">
           <span className="text-xs text-gray-400">Performance:</span>
-          <span className={`text-xs font-medium px-2 py-1 rounded ${
-            performanceLevel === 'high' ? 'bg-green-600 text-white' :
-            performanceLevel === 'medium' ? 'bg-yellow-600 text-white' :
-            'bg-red-600 text-white'
-          }`}>
-            {performanceLevel.toUpperCase()}
+          <span className="text-xs font-medium px-2 py-1 rounded bg-green-600 text-white">
+            HIGH
           </span>
-          <button
-            onClick={applyPerformanceOptimizations}
-            className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded"
-          >
-            Optimize
-          </button>
         </div>
       </div>
 
@@ -294,14 +124,14 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
             {/* Animation Speed */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Animation Speed: {animationSpeed}%
+                Animation Speed: {settings.animationSpeed || 50}%
               </label>
               <input
                 type="range"
                 min="10"
                 max="200"
-                value={animationSpeed}
-                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                value={settings.animationSpeed || 50}
+                onChange={(e) => handleSettingsChange({ animationSpeed: Number(e.target.value) })}
                 className="w-full bg-gray-800"
               />
             </div>
@@ -331,7 +161,7 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
               <input
                 type="range"
                 min="10"
-                max={performanceLevel === 'low' ? 50 : performanceLevel === 'medium' ? 100 : 200}
+                max="200"
                 value={settings.photoCount || 100}
                 onChange={(e) => handleSettingsChange({ photoCount: Number(e.target.value) })}
                 className="w-full bg-gray-800"
@@ -341,15 +171,15 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
             {/* Photo Size */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Photo Size: {photoSize.toFixed(1)}
+                Photo Size: {(settings.photoSize || 4.0).toFixed(1)}
               </label>
               <input
                 type="range"
                 min="1.0"
                 max="8.0"
                 step="0.1"
-                value={photoSize}
-                onChange={(e) => setPhotoSize(Number(e.target.value))}
+                value={settings.photoSize || 4.0}
+                onChange={(e) => handleSettingsChange({ photoSize: Number(e.target.value) })}
                 className="w-full bg-gray-800"
               />
             </div>
@@ -405,7 +235,7 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
                   value={settings.wallHeight || 0}
                   onChange={(e) => handleSettingsChange({ 
                     wallHeight: parseFloat(e.target.value) 
-                  }, true)}
+                  })}
                   className="w-full bg-gray-800"
                 />
               </div>
@@ -422,7 +252,7 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
                   value={settings.photoSpacing || 0}
                   onChange={(e) => handleSettingsChange({ 
                     photoSpacing: parseFloat(e.target.value) 
-                  }, true)}
+                  })}
                   className="w-full bg-gray-800"
                 />
               </div>
@@ -456,136 +286,6 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
                 : "When enabled, photos rotate to always face the camera for better visibility"
               }
             </p>
-          </div>
-        </div>
-      )}
-
-      {/* Camera Tab */}
-      {activeTab === 'camera' && (
-        <div className="space-y-4">
-          {/* CRITICAL: Camera Movement Conflict Resolution */}
-          <div className="border border-gray-700 rounded-lg p-4 space-y-4">
-            <h5 className="flex items-center text-sm font-medium text-gray-300">
-              <Camera className="h-3 w-3 mr-2" />
-              Camera Movement Priority
-            </h5>
-            
-            {/* Conflict Warning */}
-            {isPatternCameraEnabled && isGlobalRotationEnabled && (
-              <div className="bg-yellow-600/20 border border-yellow-600 rounded-md p-3">
-                <p className="text-sm text-yellow-300">
-                  ⚠️ Pattern camera movement takes priority over global rotation
-                </p>
-              </div>
-            )}
-
-            {/* Pattern-Specific Camera Movement */}
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={isPatternCameraEnabled || false}
-                  onChange={(e) => handleSettingsChange({
-                    patterns: {
-                      ...settings.patterns,
-                      [currentPattern]: {
-                        ...settings.patterns[currentPattern],
-                        cameraMovementEnabled: e.target.checked
-                      }
-                    }
-                  }, false)}
-                  className="mr-2 bg-gray-800 border-gray-700"
-                />
-                <label className="text-sm text-gray-300">
-                  {currentPattern.charAt(0).toUpperCase() + currentPattern.slice(1)} Camera Movement
-                </label>
-              </div>
-              <p className="text-xs text-gray-400">
-                Pattern-specific camera movement for {currentPattern} animation
-              </p>
-            </div>
-
-            {/* Global Camera Rotation */}
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={isGlobalRotationEnabled}
-                  onChange={(e) => handleSettingsChange({ cameraRotationEnabled: e.target.checked }, false)}
-                  className="mr-2 bg-gray-800 border-gray-700"
-                />
-                <label className="text-sm text-gray-300">
-                  Global Camera Rotation
-                </label>
-              </div>
-              <p className="text-xs text-gray-400">
-                {isPatternCameraEnabled ? 
-                  'Will activate when pattern camera is disabled' : 
-                  'Simple orbital camera rotation around the scene'
-                }
-              </p>
-            </div>
-
-            {/* Camera Position */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Camera Distance: {cameraDistance}
-              </label>
-              <input
-                type="range"
-                min="5"
-                max="100"
-                value={cameraDistance}
-                onChange={(e) => setCameraDistance(Number(e.target.value))}
-                className="w-full bg-gray-800"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Camera Height: {cameraHeight}
-              </label>
-              <input
-                type="range"
-                min="-10"
-                max="50"
-                value={cameraHeight}
-                onChange={(e) => setCameraHeight(Number(e.target.value))}
-                className="w-full bg-gray-800"
-              />
-            </div>
-
-            {/* Camera Speed */}
-            {(isPatternCameraEnabled || isGlobalRotationEnabled) && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Camera Speed: {((settings.cameraRotationSpeed || 0.2) * 100).toFixed(0)}%
-                </label>
-                <input
-                  type="range"
-                  min="10"
-                  max="200"
-                  value={(settings.cameraRotationSpeed || 0.2) * 100}
-                  onChange={(e) => handleSettingsChange({ 
-                    cameraRotationSpeed: Number(e.target.value) / 100 
-                  })}
-                  className="w-full bg-gray-800"
-                />
-              </div>
-            )}
-
-            {/* Manual Controls */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                checked={settings.orbitControlsEnabled !== false}
-                onChange={(e) => handleSettingsChange({ orbitControlsEnabled: e.target.checked }, false)}
-                className="mr-2 bg-gray-800 border-gray-700"
-              />
-              <label className="text-sm text-gray-300">
-                Manual Camera Controls (Mouse/Touch)
-              </label>
-            </div>
           </div>
         </div>
       )}
@@ -653,7 +353,7 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
                           cameraFloatIntensity: Number(e.target.value) / 100
                         }
                       }
-                    }, true)}
+                    })}
                     className="w-full bg-gray-800"
                   />
                 </div>
@@ -677,7 +377,7 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
                           cameraWaveAmplitude: Number(e.target.value) / 100
                         }
                       }
-                    }, true)}
+                    })}
                     className="w-full bg-gray-800"
                   />
                 </div>
@@ -702,7 +402,7 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
                             cameraOrbitSpeed: Number(e.target.value) / 100
                           }
                         }
-                      }, true)}
+                      })}
                       className="w-full bg-gray-800"
                     />
                   </div>
@@ -724,7 +424,7 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
                             cameraOrbitRadius: Number(e.target.value)
                           }
                         }
-                      }, true)}
+                      })}
                       className="w-full bg-gray-800"
                     />
                   </div>
@@ -737,7 +437,7 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  checked={isGlobalRotationEnabled || false}
+                  checked={isGlobalRotationEnabled}
                   onChange={(e) => handleSettingsChange({ cameraRotationEnabled: e.target.checked }, false)}
                   className="mr-2 bg-gray-800 border-gray-700"
                 />
@@ -756,28 +456,28 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
             {/* Camera Position */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Camera Distance: {cameraDistance}
+                Camera Distance: {settings.cameraDistance || 25}
               </label>
               <input
                 type="range"
                 min="5"
                 max="100"
-                value={cameraDistance}
-                onChange={(e) => setCameraDistance(Number(e.target.value))}
+                value={settings.cameraDistance || 25}
+                onChange={(e) => handleSettingsChange({ cameraDistance: Number(e.target.value) })}
                 className="w-full bg-gray-800"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Camera Height: {cameraHeight}
+                Camera Height: {settings.cameraHeight || 10}
               </label>
               <input
                 type="range"
                 min="-10"
                 max="50"
-                value={cameraHeight}
-                onChange={(e) => setCameraHeight(Number(e.target.value))}
+                value={settings.cameraHeight || 10}
+                onChange={(e) => handleSettingsChange({ cameraHeight: Number(e.target.value) })}
                 className="w-full bg-gray-800"
               />
             </div>
@@ -1117,24 +817,6 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
               Performance Optimization
             </h5>
             
-            {/* Performance Level Override */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Performance Mode
-              </label>
-              <select
-                value={performanceLevel}
-                onChange={(e) => {
-                  // setPerformanceLevel(e.target.value as any); // Enable when PerformanceMonitor is available
-                }}
-                className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-white"
-              >
-                <option value="high">High Quality (Best visuals)</option>
-                <option value="medium">Balanced (Good performance)</option>
-                <option value="low">Performance (Smooth on low-end devices)</option>
-              </select>
-            </div>
-
             {/* Shadow Settings */}
             <div className="flex items-center">
               <input
@@ -1165,7 +847,7 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
             <div className="bg-gray-800/50 rounded-md p-3">
               <p className="text-xs text-gray-400">
                 Performance monitoring will be available when PerformanceMonitor component is integrated.
-                Current optimizations include debounced controls, smooth interpolation, and automatic quality scaling.
+                Current optimizations include smooth interpolation and automatic quality scaling.
               </p>
             </div>
           </div>
@@ -1183,7 +865,6 @@ const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChang
       </div>
     </div>
   );
-};
 };
 
 export default SceneSettings;

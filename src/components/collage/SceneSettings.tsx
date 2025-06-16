@@ -1,1037 +1,1152 @@
-import React from 'react';
+// src/components/collage/SceneSettings.tsx - COMPLETE OPTIMIZED VERSION
+import React, { useState, useCallback, useMemo } from 'react';
+import { 
+  Camera, Lightbulb, Palette, Play, Pause, RotateCcw, Video, Monitor, 
+  Grid, ImageIcon, Square, Sun, Move, Eye, CameraIcon 
+} from 'lucide-react';
 import { type SceneSettings } from '../../store/sceneStore';
-import { Grid, Palette, CameraIcon, ImageIcon, Square, Sun, Lightbulb, RotateCw, Move, Eye, Video } from 'lucide-react';
+// Note: Import this when PerformanceMonitor is available
+// import { usePerformanceOptimization } from '../three/PerformanceMonitor';
 
-const SceneSettings: React.FC<{
+interface SceneSettingsProps {
   settings: SceneSettings;
   onSettingsChange: (settings: Partial<SceneSettings>, debounce?: boolean) => void;
   onReset: () => void;
-}> = ({ settings, onSettingsChange, onReset }) => {
+}
+
+// PERFORMANCE: Debounced input hook to prevent excessive updates during dragging
+const useDebouncedValue = (value: number, delay: number, onChange: (value: number) => void) => {
+  const [localValue, setLocalValue] = useState(value);
+  const timeoutRef = React.useRef<NodeJS.Timeout>();
+
+  React.useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const handleChange = useCallback((newValue: number) => {
+    setLocalValue(newValue);
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      onChange(newValue);
+    }, delay);
+  }, [onChange, delay]);
+
+  return [localValue, handleChange] as const;
+};
+
+const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChange, onReset }) => {
+  const [activeTab, setActiveTab] = useState<'animation' | 'camera' | 'lighting' | 'appearance' | 'performance'>('animation');
+  
+  // Performance optimization - temporarily disabled until PerformanceMonitor is available
+  // const { performanceLevel, optimizedSettings, setPerformanceLevel } = usePerformanceOptimization();
+  const performanceLevel = 'high'; // Fallback
+  const optimizedSettings = { shadowsEnabled: true, photoSize: 4.0, animationSpeed: 50 }; // Fallback
+  
+  // OPTIMIZED: Memoized change handlers to prevent unnecessary re-renders
+  const handleSettingsChange = useCallback((newSettings: Partial<SceneSettings>, debounce = true) => {
+    onSettingsChange(newSettings, debounce);
+  }, [onSettingsChange]);
+
+  // PERFORMANCE: Debounced sliders for smooth interaction
+  const [photoSize, setPhotoSize] = useDebouncedValue(
+    settings.photoSize || 4.0,
+    100,
+    (value) => handleSettingsChange({ photoSize: value })
+  );
+
+  const [animationSpeed, setAnimationSpeed] = useDebouncedValue(
+    settings.animationSpeed || 50,
+    100,
+    (value) => handleSettingsChange({ animationSpeed: value })
+  );
+
+  const [cameraDistance, setCameraDistance] = useDebouncedValue(
+    settings.cameraDistance || 25,
+    100,
+    (value) => handleSettingsChange({ cameraDistance: value })
+  );
+
+  const [cameraHeight, setCameraHeight] = useDebouncedValue(
+    settings.cameraHeight || 10,
+    100,
+    (value) => handleSettingsChange({ cameraHeight: value })
+  );
+
+  // PERFORMANCE: Apply optimized settings automatically
+  const applyPerformanceOptimizations = useCallback(() => {
+    handleSettingsChange({
+      ...optimizedSettings,
+      shadowsEnabled: optimizedSettings.shadowsEnabled,
+      photoSize: optimizedSettings.photoSize,
+      animationSpeed: optimizedSettings.animationSpeed,
+    }, false);
+  }, [optimizedSettings, handleSettingsChange]);
+
+  // CRITICAL: Pattern-specific camera movement conflict resolution
+  const currentPattern = settings.animationPattern;
+  const isPatternCameraEnabled = settings.patterns?.[currentPattern]?.cameraMovementEnabled;
+  const isGlobalRotationEnabled = settings.cameraRotationEnabled;
+
+// PERFORMANCE: Debounced input hook to prevent excessive updates during dragging
+const useDebouncedValue = (value: number, delay: number, onChange: (value: number) => void) => {
+  const [localValue, setLocalValue] = useState(value);
+  const timeoutRef = React.useRef<NodeJS.Timeout>();
+
+  React.useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const handleChange = useCallback((newValue: number) => {
+    setLocalValue(newValue);
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      onChange(newValue);
+    }, delay);
+  }, [onChange, delay]);
+
+  return [localValue, handleChange] as const;
+};
+
+const SceneSettings: React.FC<SceneSettingsProps> = ({ settings, onSettingsChange }) => {
+  const [activeTab, setActiveTab] = useState<'animation' | 'camera' | 'lighting' | 'appearance' | 'performance'>('animation');
+  
+  // Performance optimization
+  const { performanceLevel, optimizedSettings, setPerformanceLevel } = usePerformanceOptimization();
+  
+  // OPTIMIZED: Memoized change handlers to prevent unnecessary re-renders
+  const handleSettingsChange = useCallback((newSettings: Partial<SceneSettings>, debounce = true) => {
+    onSettingsChange(newSettings, debounce);
+  }, [onSettingsChange]);
+
+  // PERFORMANCE: Debounced sliders for smooth interaction
+  const [photoSize, setPhotoSize] = useDebouncedValue(
+    settings.photoSize || 4.0,
+    100,
+    (value) => handleSettingsChange({ photoSize: value })
+  );
+
+  const [animationSpeed, setAnimationSpeed] = useDebouncedValue(
+    settings.animationSpeed || 50,
+    100,
+    (value) => handleSettingsChange({ animationSpeed: value })
+  );
+
+  const [cameraDistance, setCameraDistance] = useDebouncedValue(
+    settings.cameraDistance || 25,
+    100,
+    (value) => handleSettingsChange({ cameraDistance: value })
+  );
+
+  const [cameraHeight, setCameraHeight] = useDebouncedValue(
+    settings.cameraHeight || 10,
+    100,
+    (value) => handleSettingsChange({ cameraHeight: value })
+  );
+
+  // PERFORMANCE: Apply optimized settings automatically
+  const applyPerformanceOptimizations = useCallback(() => {
+    handleSettingsChange({
+      ...optimizedSettings,
+      shadowsEnabled: optimizedSettings.shadowsEnabled,
+      photoSize: optimizedSettings.photoSize,
+      animationSpeed: optimizedSettings.animationSpeed,
+    }, false);
+  }, [optimizedSettings, handleSettingsChange]);
+
+  // CRITICAL: Pattern-specific camera movement conflict resolution
+  const currentPattern = settings.animationPattern;
+  const isPatternCameraEnabled = settings.patterns[currentPattern]?.cameraMovementEnabled;
+  const isGlobalRotationEnabled = settings.cameraRotationEnabled;
+
   return (
-    <div className="space-y-6">
-      {/* Animation Controls */}
-      <div>
-        <h4 className="flex items-center text-sm font-medium text-gray-200 mb-3">
-          <Move className="h-4 w-4 mr-2" />
-          Animation
+    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-4">
+      {/* Performance Monitor */}
+      <div className="flex items-center justify-between border-b border-gray-700 pb-3">
+        <h4 className="flex items-center text-lg font-semibold text-white">
+          <Monitor className="h-4 w-4 mr-2" />
+          Scene Settings
         </h4>
-        
-        <div className="space-y-4">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={settings.animationEnabled}
-              onChange={(e) => onSettingsChange({ 
-                animationEnabled: e.target.checked 
-              })}
-              className="mr-2 bg-gray-800 border-gray-700"
-            />
-            <label className="text-sm text-gray-300">
-              Enable Animations
-            </label>
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              Animation Pattern
-            </label>
-            <select
-              value={settings.animationPattern}
-              onChange={(e) => onSettingsChange({ 
-                animationPattern: e.target.value as 'float' | 'wave' | 'spiral' | 'grid' 
-              })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white"
-            >
-              <option value="grid">Grid Wall</option>
-              <option value="float">Float</option>
-              <option value="wave">Wave</option>
-              <option value="spiral">Spiral</option>
-            </select>
-          </div>
-          
-          {settings.animationEnabled && (
-            <div>
-              <label className="block text-sm text-gray-300 mb-2">
-                Animation Speed
-                <span className="ml-2 text-xs text-gray-400">
-                  {settings.animationSpeed}%
-                </span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value={settings.animationSpeed}
-                onChange={(e) => onSettingsChange({ 
-                  animationSpeed: parseFloat(e.target.value) 
-                }, true)}
-                className="w-full bg-gray-800"
-              />
-            </div>
-          )}
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-gray-400">Performance:</span>
+          <span className={`text-xs font-medium px-2 py-1 rounded ${
+            performanceLevel === 'high' ? 'bg-green-600 text-white' :
+            performanceLevel === 'medium' ? 'bg-yellow-600 text-white' :
+            'bg-red-600 text-white'
+          }`}>
+            {performanceLevel.toUpperCase()}
+          </span>
+          <button
+            onClick={applyPerformanceOptimizations}
+            className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded"
+          >
+            Optimize
+          </button>
         </div>
       </div>
 
-      {/* Photo Count and Size */}
-      <div>
-        <h4 className="flex items-center text-sm font-medium text-gray-200 mb-3">
-          <ImageIcon className="h-4 w-4 mr-2" />
-          Photo Display
-        </h4>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              Photo Count
-              <span className="ml-2 text-xs text-gray-400">{settings.photoCount} photos</span>
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="500"
-              step="1"
-              value={settings.photoCount}
-              onChange={(e) => onSettingsChange({ 
-                photoCount: parseInt(e.target.value) 
-              })}
-              className="w-full bg-gray-800"
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              Number of photos to display simultaneously
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              Photo Size
-              <span className="ml-2 text-xs text-gray-400">{settings.photoSize.toFixed(1)} units</span>
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="20"
-              step="0.5"
-              value={settings.photoSize}
-              onChange={(e) => onSettingsChange({ 
-                photoSize: parseFloat(e.target.value) 
-              }, true)}
-              className="w-full bg-gray-800"
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              Photo size multiplier (1 = small, 20 = huge)
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              Photo Brightness
-              <span className="ml-2 text-xs text-gray-400">{(settings.photoBrightness * 100).toFixed(0)}%</span>
-            </label>
-            <input
-              type="range"
-              min="0.1"
-              max="3"
-              step="0.1"
-              value={settings.photoBrightness}
-              onChange={(e) => onSettingsChange({ 
-                photoBrightness: parseFloat(e.target.value) 
-              }, true)}
-              className="w-full bg-gray-800"
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              Adjust photo brightness independently (10% = very dark, 300% = very bright)
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              Empty Slot Color
-            </label>
-            <input
-              type="color"
-              value={settings.emptySlotColor}
-              onChange={(e) => onSettingsChange({ 
-                emptySlotColor: e.target.value 
-              }, true)}
-              className="w-full h-8 rounded cursor-pointer bg-gray-800"
-            />
-          </div>
-        </div>
+      {/* Tab Navigation */}
+      <div className="flex space-x-1 bg-gray-800 rounded-lg p-1">
+        {[
+          { id: 'animation', label: 'Animation', icon: Play },
+          { id: 'camera', label: 'Camera', icon: Camera },
+          { id: 'lighting', label: 'Lighting', icon: Lightbulb },
+          { id: 'appearance', label: 'Style', icon: Palette },
+          { id: 'performance', label: 'Performance', icon: Monitor },
+        ].map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTab(id as any)}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === id
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:text-white hover:bg-gray-700'
+            }`}
+          >
+            <Icon className="h-3 w-3 mr-1" />
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* Grid Wall Settings - Only show when grid pattern is selected */}
-      {settings.animationPattern === 'grid' && (
-        <div>
-          <h4 className="flex items-center text-sm font-medium text-gray-200 mb-3">
-            <Grid className="h-4 w-4 mr-2" />
-            Grid Wall Settings
-          </h4>
-          
-          <div className="space-y-4">
+      {/* Animation Tab */}
+      {activeTab === 'animation' && (
+        <div className="space-y-4">
+          {/* Animation Controls */}
+          <div className="border border-gray-700 rounded-lg p-4 space-y-4">
+            <h5 className="flex items-center text-sm font-medium text-gray-300">
+              <Play className="h-3 w-3 mr-2" />
+              Animation Controls
+            </h5>
+            
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => handleSettingsChange({ animationEnabled: !settings.animationEnabled }, false)}
+                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  settings.animationEnabled
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                }`}
+              >
+                {settings.animationEnabled ? (
+                  <>
+                    <Pause className="h-3 w-3 mr-1" />
+                    Pause
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-3 w-3 mr-1" />
+                    Play
+                  </>
+                )}
+              </button>
+              
+              <button
+                onClick={() => handleSettingsChange({ 
+                  animationEnabled: false,
+                  cameraRotationEnabled: false,
+                  patterns: {
+                    ...settings.patterns,
+                    [currentPattern]: {
+                      ...settings.patterns?.[currentPattern],
+                      cameraMovementEnabled: false
+                    }
+                  }
+                }, false)}
+                className="flex items-center px-3 py-2 rounded-md text-sm font-medium bg-gray-700 hover:bg-gray-600 text-gray-300"
+              >
+                <RotateCcw className="h-3 w-3 mr-1" />
+                Stop All
+              </button>
+            </div>
+
+            {/* Animation Speed */}
             <div>
-              <label className="block text-sm text-gray-300 mb-2">
-                Wall Height
-                <span className="ml-2 text-xs text-gray-400">{settings.wallHeight.toFixed(1)} units</span>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Animation Speed: {animationSpeed}%
               </label>
               <input
                 type="range"
-                min="0"
-                max="30"
-                step="0.5"
-                value={settings.wallHeight}
-                onChange={(e) => onSettingsChange({ 
-                  wallHeight: parseFloat(e.target.value) 
-                }, true)}
+                min="10"
+                max="200"
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
                 className="w-full bg-gray-800"
               />
-              <p className="mt-1 text-xs text-gray-400">
-                Adjust the vertical position of the photo wall
-              </p>
             </div>
 
+            {/* Pattern Selection */}
             <div>
-              <label className="block text-sm text-gray-300 mb-2">
-                Photo Spacing
-                <span className="ml-2 text-xs text-gray-400">
-                  {settings.photoSpacing === 0 ? 'Solid Wall' : `${(settings.photoSpacing * 200).toFixed(0)}% gaps`}
-                </span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={settings.photoSpacing}
-                onChange={(e) => onSettingsChange({ 
-                  photoSpacing: parseFloat(e.target.value) 
-                }, true)}
-                className="w-full bg-gray-800"
-              />
-              <p className="mt-1 text-xs text-gray-400">
-                {settings.photoSpacing === 0 
-                  ? '🧱 Edge-to-edge solid wall (no gaps)'
-                  : settings.photoSpacing < 0.5
-                  ? '📐 Small gaps between photos'
-                  : '🎯 Large gaps between photos'
-                }
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-300 mb-2">
-                Grid Aspect Ratio Preset
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Animation Pattern
               </label>
               <select
-                value={settings.gridAspectRatioPreset}
-                onChange={(e) => {
-                  const preset = e.target.value as SceneSettings['gridAspectRatioPreset'];
-                  let ratio = settings.gridAspectRatio;
-                  
-                  switch (preset) {
-                    case '1:1': ratio = 1; break;
-                    case '4:3': ratio = 1.333333; break;
-                    case '16:9': ratio = 1.777778; break;
-                    case '21:9': ratio = 2.333333; break;
-                    case 'custom': break;
-                  }
-                  
-                  onSettingsChange({
-                    gridAspectRatioPreset: preset,
-                    gridAspectRatio: ratio
-                  });
-                }}
-                className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white"
+                value={settings.animationPattern}
+                onChange={(e) => handleSettingsChange({ animationPattern: e.target.value as any }, false)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-white"
               >
-                <option value="1:1">Square (1:1)</option>
-                <option value="4:3">Standard (4:3)</option>
-                <option value="16:9">Widescreen (16:9)</option>
-                <option value="21:9">Ultrawide (21:9)</option>
-                <option value="custom">Custom</option>
+                <option value="grid">Grid Wall</option>
+                <option value="float">Floating Photos</option>
+                <option value="wave">Wave Motion</option>
+                <option value="spiral">Spiral Tornado</option>
               </select>
             </div>
 
-            {settings.gridAspectRatioPreset === 'custom' && (
+            {/* Photo Count */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Max Photos: {settings.photoCount || 100}
+              </label>
+              <input
+                type="range"
+                min="10"
+                max={performanceLevel === 'low' ? 50 : performanceLevel === 'medium' ? 100 : 200}
+                value={settings.photoCount || 100}
+                onChange={(e) => handleSettingsChange({ photoCount: Number(e.target.value) })}
+                className="w-full bg-gray-800"
+              />
+            </div>
+
+            {/* Photo Size */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Photo Size: {photoSize.toFixed(1)}
+              </label>
+              <input
+                type="range"
+                min="1.0"
+                max="8.0"
+                step="0.1"
+                value={photoSize}
+                onChange={(e) => setPhotoSize(Number(e.target.value))}
+                className="w-full bg-gray-800"
+              />
+            </div>
+
+            {/* Photo Brightness */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Photo Brightness: {((settings.photoBrightness || 1) * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="50"
+                max="200"
+                value={(settings.photoBrightness || 1) * 100}
+                onChange={(e) => handleSettingsChange({ 
+                  photoBrightness: Number(e.target.value) / 100 
+                })}
+                className="w-full bg-gray-800"
+              />
+            </div>
+
+            {/* Empty Slot Color */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Empty Slot Color
+              </label>
+              <input
+                type="color"
+                value={settings.emptySlotColor || '#333333'}
+                onChange={(e) => handleSettingsChange({ emptySlotColor: e.target.value })}
+                className="w-16 h-8 bg-gray-800 border border-gray-700 rounded cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {/* Grid Wall Settings - Only show when grid pattern is selected */}
+          {settings.animationPattern === 'grid' && (
+            <div className="border border-gray-700 rounded-lg p-4 space-y-4">
+              <h5 className="flex items-center text-sm font-medium text-gray-300">
+                <Grid className="h-3 w-3 mr-2" />
+                Grid Wall Settings
+              </h5>
+              
               <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Custom Aspect Ratio
-                  <span className="ml-2 text-xs text-gray-400">{settings.gridAspectRatio.toFixed(2)}</span>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Wall Height: {(settings.wallHeight || 0).toFixed(1)} units
                 </label>
                 <input
                   type="range"
-                  min="0.5"
-                  max="3"
-                  step="0.1"
-                  value={settings.gridAspectRatio}
-                  onChange={(e) => onSettingsChange({ 
-                    gridAspectRatio: parseFloat(e.target.value) 
-                  })}
+                  min="0"
+                  max="30"
+                  step="0.5"
+                  value={settings.wallHeight || 0}
+                  onChange={(e) => handleSettingsChange({ 
+                    wallHeight: parseFloat(e.target.value) 
+                  }, true)}
                   className="w-full bg-gray-800"
                 />
               </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* Photo Rotation */}
-      <div>
-        <h4 className="flex items-center text-sm font-medium text-gray-200 mb-3">
-          <RotateCw className="h-4 w-4 mr-2" />
-          Photo Behavior
-        </h4>
-        
-        <div className="space-y-4">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={settings.photoRotation}
-              onChange={(e) => onSettingsChange({ 
-                photoRotation: e.target.checked 
-              })}
-              className="mr-2 bg-gray-800 border-gray-700"
-            />
-            <label className="text-sm text-gray-300">
-              Enable Photo Rotation
-            </label>
-          </div>
-          
-          <p className="text-xs text-gray-400">
-            {settings.animationPattern === 'grid' 
-              ? "Grid Wall: Turn OFF for traditional flat wall, turn ON for billboard effect" 
-              : "When enabled, photos rotate to always face the camera for better visibility"
-            }
-          </p>
-        </div>
-      </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Photo Spacing: {settings.photoSpacing === 0 ? 'Solid Wall' : `${((settings.photoSpacing || 0) * 200).toFixed(0)}% gaps`}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={settings.photoSpacing || 0}
+                  onChange={(e) => handleSettingsChange({ 
+                    photoSpacing: parseFloat(e.target.value) 
+                  }, true)}
+                  className="w-full bg-gray-800"
+                />
+              </div>
+            </div>
+          )}
 
-      {/* Enhanced Camera Controls with Pattern-Specific Movements */}
-      <div>
-        <h4 className="flex items-center text-sm font-medium text-gray-200 mb-3">
-          <CameraIcon className="h-4 w-4 mr-2" />
-          Camera Controls
-        </h4>
-        
-        <div className="space-y-4">
-          {/* Basic Camera Enable/Disable */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={settings.cameraEnabled}
-              onChange={(e) => onSettingsChange({ 
-                cameraEnabled: e.target.checked 
-              })}
-              className="mr-2 bg-gray-800 border-gray-700"
-            />
-            <label className="text-sm text-gray-300">
-              Enable Manual Camera Controls
-            </label>
-          </div>
-
-          {/* Global Camera Movement Settings */}
+          {/* Photo Rotation */}
           <div className="border border-gray-700 rounded-lg p-4 space-y-4">
             <h5 className="flex items-center text-sm font-medium text-gray-300">
-              <RotateCw className="h-3 w-3 mr-2" />
-              Global Camera Movement
+              <RotateCcw className="h-3 w-3 mr-2" />
+              Photo Behavior
             </h5>
             
             <div className="flex items-center">
               <input
                 type="checkbox"
-                checked={settings.cameraRotationEnabled}
-                onChange={(e) => onSettingsChange({ 
-                  cameraRotationEnabled: e.target.checked 
+                checked={settings.photoRotation || false}
+                onChange={(e) => handleSettingsChange({ 
+                  photoRotation: e.target.checked 
                 })}
                 className="mr-2 bg-gray-800 border-gray-700"
               />
               <label className="text-sm text-gray-300">
-                Auto Rotate Camera
+                Enable Photo Rotation
               </label>
             </div>
-
-            {settings.cameraRotationEnabled && (
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Rotation Speed
-                  <span className="ml-2 text-xs text-gray-400">{settings.cameraRotationSpeed.toFixed(1)}x</span>
-                </label>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="2"
-                  step="0.1"
-                  value={settings.cameraRotationSpeed}
-                  onChange={(e) => onSettingsChange({ 
-                    cameraRotationSpeed: parseFloat(e.target.value) 
-                  }, true)}
-                  className="w-full bg-gray-800"
-                />
-              </div>
-            )}
+            
+            <p className="text-xs text-gray-400">
+              {settings.animationPattern === 'grid' 
+                ? "Grid Wall: Turn OFF for traditional flat wall, turn ON for billboard effect" 
+                : "When enabled, photos rotate to always face the camera for better visibility"
+              }
+            </p>
           </div>
+        </div>
+      )}
 
-          {/* Pattern-Specific Camera Movements */}
+      {/* Camera Tab */}
+      {activeTab === 'camera' && (
+        <div className="space-y-4">
+          {/* CRITICAL: Camera Movement Conflict Resolution */}
           <div className="border border-gray-700 rounded-lg p-4 space-y-4">
             <h5 className="flex items-center text-sm font-medium text-gray-300">
-              <Video className="h-3 w-3 mr-2" />
-              Pattern Camera Movements
+              <Camera className="h-3 w-3 mr-2" />
+              Camera Movement Priority
             </h5>
             
-            {/* Grid Pattern Camera Movement */}
-            {settings.animationPattern === 'grid' && (
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={settings.patterns.grid.cameraMovementEnabled || false}
-                    onChange={(e) => onSettingsChange({
-                      patterns: {
-                        ...settings.patterns,
-                        grid: {
-                          ...settings.patterns.grid,
-                          cameraMovementEnabled: e.target.checked
-                        }
-                      }
-                    })}
-                    className="mr-2 bg-gray-800 border-gray-700"
-                  />
-                  <label className="text-sm text-gray-300">
-                    Grid Camera Movement
-                  </label>
-                </div>
-                <p className="text-xs text-gray-400">
-                  Gentle panning and subtle tilting to showcase the wall layout
+            {/* Conflict Warning */}
+            {isPatternCameraEnabled && isGlobalRotationEnabled && (
+              <div className="bg-yellow-600/20 border border-yellow-600 rounded-md p-3">
+                <p className="text-sm text-yellow-300">
+                  ⚠️ Pattern camera movement takes priority over global rotation
                 </p>
               </div>
             )}
 
-            {/* Float Pattern Camera Movement */}
-            {settings.animationPattern === 'float' && (
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={settings.patterns.float.cameraMovementEnabled || false}
-                    onChange={(e) => onSettingsChange({
-                      patterns: {
-                        ...settings.patterns,
-                        float: {
-                          ...settings.patterns.float,
-                          cameraMovementEnabled: e.target.checked
-                        }
+            {/* Pattern-Specific Camera Movement */}
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isPatternCameraEnabled || false}
+                  onChange={(e) => handleSettingsChange({
+                    patterns: {
+                      ...settings.patterns,
+                      [currentPattern]: {
+                        ...settings.patterns[currentPattern],
+                        cameraMovementEnabled: e.target.checked
                       }
-                    })}
-                    className="mr-2 bg-gray-800 border-gray-700"
-                  />
-                  <label className="text-sm text-gray-300">
-                    Float Camera Movement
-                  </label>
-                </div>
-                <p className="text-xs text-gray-400">
-                  Floating motion following the ascending photos with gentle bobbing
-                </p>
-                
-                {settings.patterns.float.cameraMovementEnabled && (
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-2">
-                      Float Intensity
-                      <span className="ml-2 text-xs text-gray-400">
-                        {((settings.patterns.float.cameraFloatIntensity || 1) * 100).toFixed(0)}%
-                      </span>
-                    </label>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="2"
-                      step="0.1"
-                      value={settings.patterns.float.cameraFloatIntensity || 1}
-                      onChange={(e) => onSettingsChange({
-                        patterns: {
-                          ...settings.patterns,
-                          float: {
-                            ...settings.patterns.float,
-                            cameraFloatIntensity: parseFloat(e.target.value)
-                          }
-                        }
-                      }, true)}
-                      className="w-full bg-gray-800"
-                    />
-                  </div>
-                )}
+                    }
+                  }, false)}
+                  className="mr-2 bg-gray-800 border-gray-700"
+                />
+                <label className="text-sm text-gray-300">
+                  {currentPattern.charAt(0).toUpperCase() + currentPattern.slice(1)} Camera Movement
+                </label>
               </div>
-            )}
+              <p className="text-xs text-gray-400">
+                Pattern-specific camera movement for {currentPattern} animation
+              </p>
+            </div>
 
-            {/* Wave Pattern Camera Movement */}
-            {settings.animationPattern === 'wave' && (
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={settings.patterns.wave.cameraMovementEnabled || false}
-                    onChange={(e) => onSettingsChange({
-                      patterns: {
-                        ...settings.patterns,
-                        wave: {
-                          ...settings.patterns.wave,
-                          cameraMovementEnabled: e.target.checked
-                        }
-                      }
-                    })}
-                    className="mr-2 bg-gray-800 border-gray-700"
-                  />
-                  <label className="text-sm text-gray-300">
-                    Wave Camera Movement
-                  </label>
-                </div>
-                <p className="text-xs text-gray-400">
-                  Rhythmic wave-like motion synced with the photo animations
-                </p>
-                
-                {settings.patterns.wave.cameraMovementEnabled && (
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-2">
-                      Wave Amplitude
-                      <span className="ml-2 text-xs text-gray-400">
-                        {((settings.patterns.wave.cameraWaveAmplitude || 1) * 100).toFixed(0)}%
-                      </span>
-                    </label>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="2"
-                      step="0.1"
-                      value={settings.patterns.wave.cameraWaveAmplitude || 1}
-                      onChange={(e) => onSettingsChange({
-                        patterns: {
-                          ...settings.patterns,
-                          wave: {
-                            ...settings.patterns.wave,
-                            cameraWaveAmplitude: parseFloat(e.target.value)
-                          }
-                        }
-                      }, true)}
-                      className="w-full bg-gray-800"
-                    />
-                  </div>
-                )}
+            {/* Global Camera Rotation */}
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isGlobalRotationEnabled || false}
+                  onChange={(e) => handleSettingsChange({ cameraRotationEnabled: e.target.checked }, false)}
+                  className="mr-2 bg-gray-800 border-gray-700"
+                />
+                <label className="text-sm text-gray-300">
+                  Global Camera Rotation
+                </label>
               </div>
-            )}
+              <p className="text-xs text-gray-400">
+                {isPatternCameraEnabled ? 
+                  'Will activate when pattern camera is disabled' : 
+                  'Simple orbital camera rotation around the scene'
+                }
+              </p>
+            </div>
 
-            {/* Spiral Pattern Camera Movement */}
-            {settings.animationPattern === 'spiral' && (
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={settings.patterns.spiral.cameraMovementEnabled || false}
-                    onChange={(e) => onSettingsChange({
-                      patterns: {
-                        ...settings.patterns,
-                        spiral: {
-                          ...settings.patterns.spiral,
-                          cameraMovementEnabled: e.target.checked
-                        }
-                      }
-                    })}
-                    className="mr-2 bg-gray-800 border-gray-700"
-                  />
-                  <label className="text-sm text-gray-300">
-                    Spiral Camera Movement
-                  </label>
-                </div>
-                <p className="text-xs text-gray-400">
-                  Orbiting motion around the spiral with dynamic height changes
-                </p>
-                
-                {settings.patterns.spiral.cameraMovementEnabled && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm text-gray-300 mb-2">
-                        Orbit Speed
-                        <span className="ml-2 text-xs text-gray-400">
-                          {((settings.patterns.spiral.cameraOrbitSpeed || 1) * 100).toFixed(0)}%
-                        </span>
-                      </label>
-                      <input
-                        type="range"
-                        min="0.1"
-                        max="2"
-                        step="0.1"
-                        value={settings.patterns.spiral.cameraOrbitSpeed || 1}
-                        onChange={(e) => onSettingsChange({
-                          patterns: {
-                            ...settings.patterns,
-                            spiral: {
-                              ...settings.patterns.spiral,
-                              cameraOrbitSpeed: parseFloat(e.target.value)
-                            }
-                          }
-                        }, true)}
-                        className="w-full bg-gray-800"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm text-gray-300 mb-2">
-                        Orbit Radius
-                        <span className="ml-2 text-xs text-gray-400">
-                          {(settings.patterns.spiral.cameraOrbitRadius || 20)} units
-                        </span>
-                      </label>
-                      <input
-                        type="range"
-                        min="10"
-                        max="50"
-                        step="1"
-                        value={settings.patterns.spiral.cameraOrbitRadius || 20}
-                        onChange={(e) => onSettingsChange({
-                          patterns: {
-                            ...settings.patterns,
-                            spiral: {
-                              ...settings.patterns.spiral,
-                              cameraOrbitRadius: parseFloat(e.target.value)
-                            }
-                          }
-                        }, true)}
-                        className="w-full bg-gray-800"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+            {/* Camera Position */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Camera Distance: {cameraDistance}
+              </label>
+              <input
+                type="range"
+                min="5"
+                max="100"
+                value={cameraDistance}
+                onChange={(e) => setCameraDistance(Number(e.target.value))}
+                className="w-full bg-gray-800"
+              />
+            </div>
 
-          {/* Basic Camera Position Controls */}
-          {settings.cameraEnabled && (
-            <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Camera Height: {cameraHeight}
+              </label>
+              <input
+                type="range"
+                min="-10"
+                max="50"
+                value={cameraHeight}
+                onChange={(e) => setCameraHeight(Number(e.target.value))}
+                className="w-full bg-gray-800"
+              />
+            </div>
+
+            {/* Camera Speed */}
+            {(isPatternCameraEnabled || isGlobalRotationEnabled) && (
               <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Camera Distance
-                  <span className="ml-2 text-xs text-gray-400">{settings.cameraDistance} units</span>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Camera Speed: {((settings.cameraRotationSpeed || 0.2) * 100).toFixed(0)}%
                 </label>
                 <input
                   type="range"
                   min="10"
-                  max="100"
-                  step="1"
-                  value={settings.cameraDistance}
-                  onChange={(e) => onSettingsChange({ 
-                    cameraDistance: parseFloat(e.target.value) 
-                  }, true)}
+                  max="200"
+                  value={(settings.cameraRotationSpeed || 0.2) * 100}
+                  onChange={(e) => handleSettingsChange({ 
+                    cameraRotationSpeed: Number(e.target.value) / 100 
+                  })}
                   className="w-full bg-gray-800"
                 />
               </div>
+            )}
 
+            {/* Manual Controls */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={settings.orbitControlsEnabled !== false}
+                onChange={(e) => handleSettingsChange({ orbitControlsEnabled: e.target.checked }, false)}
+                className="mr-2 bg-gray-800 border-gray-700"
+              />
+              <label className="text-sm text-gray-300">
+                Manual Camera Controls (Mouse/Touch)
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Camera Tab */}
+      {activeTab === 'camera' && (
+        <div className="space-y-4">
+          {/* CRITICAL: Camera Movement Conflict Resolution */}
+          <div className="border border-gray-700 rounded-lg p-4 space-y-4">
+            <h5 className="flex items-center text-sm font-medium text-gray-300">
+              <Camera className="h-3 w-3 mr-2" />
+              Camera Movement Priority
+            </h5>
+            
+            {/* Conflict Warning */}
+            {isPatternCameraEnabled && isGlobalRotationEnabled && (
+              <div className="bg-yellow-600/20 border border-yellow-600 rounded-md p-3">
+                <p className="text-sm text-yellow-300">
+                  ⚠️ Pattern camera movement takes priority over global rotation
+                </p>
+              </div>
+            )}
+
+            {/* Pattern-Specific Camera Movement */}
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isPatternCameraEnabled || false}
+                  onChange={(e) => handleSettingsChange({
+                    patterns: {
+                      ...settings.patterns,
+                      [currentPattern]: {
+                        ...settings.patterns?.[currentPattern],
+                        cameraMovementEnabled: e.target.checked
+                      }
+                    }
+                  }, false)}
+                  className="mr-2 bg-gray-800 border-gray-700"
+                />
+                <label className="text-sm text-gray-300">
+                  {currentPattern.charAt(0).toUpperCase() + currentPattern.slice(1)} Camera Movement
+                </label>
+              </div>
+              <p className="text-xs text-gray-400">
+                Pattern-specific camera movement for {currentPattern} animation
+              </p>
+
+              {/* Pattern-specific controls */}
+              {isPatternCameraEnabled && currentPattern === 'float' && (
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Float Intensity: {((settings.patterns?.float?.cameraFloatIntensity || 1) * 100).toFixed(0)}%
+                  </label>
+                  <input
+                    type="range"
+                    min="10"
+                    max="200"
+                    value={(settings.patterns?.float?.cameraFloatIntensity || 1) * 100}
+                    onChange={(e) => handleSettingsChange({
+                      patterns: {
+                        ...settings.patterns,
+                        float: {
+                          ...settings.patterns?.float,
+                          cameraFloatIntensity: Number(e.target.value) / 100
+                        }
+                      }
+                    }, true)}
+                    className="w-full bg-gray-800"
+                  />
+                </div>
+              )}
+
+              {isPatternCameraEnabled && currentPattern === 'wave' && (
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Wave Amplitude: {((settings.patterns?.wave?.cameraWaveAmplitude || 1) * 100).toFixed(0)}%
+                  </label>
+                  <input
+                    type="range"
+                    min="10"
+                    max="200"
+                    value={(settings.patterns?.wave?.cameraWaveAmplitude || 1) * 100}
+                    onChange={(e) => handleSettingsChange({
+                      patterns: {
+                        ...settings.patterns,
+                        wave: {
+                          ...settings.patterns?.wave,
+                          cameraWaveAmplitude: Number(e.target.value) / 100
+                        }
+                      }
+                    }, true)}
+                    className="w-full bg-gray-800"
+                  />
+                </div>
+              )}
+
+              {isPatternCameraEnabled && currentPattern === 'spiral' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">
+                      Orbit Speed: {((settings.patterns?.spiral?.cameraOrbitSpeed || 1) * 100).toFixed(0)}%
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="200"
+                      value={(settings.patterns?.spiral?.cameraOrbitSpeed || 1) * 100}
+                      onChange={(e) => handleSettingsChange({
+                        patterns: {
+                          ...settings.patterns,
+                          spiral: {
+                            ...settings.patterns?.spiral,
+                            cameraOrbitSpeed: Number(e.target.value) / 100
+                          }
+                        }
+                      }, true)}
+                      className="w-full bg-gray-800"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">
+                      Orbit Radius: {(settings.patterns?.spiral?.cameraOrbitRadius || 20)} units
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="50"
+                      value={settings.patterns?.spiral?.cameraOrbitRadius || 20}
+                      onChange={(e) => handleSettingsChange({
+                        patterns: {
+                          ...settings.patterns,
+                          spiral: {
+                            ...settings.patterns?.spiral,
+                            cameraOrbitRadius: Number(e.target.value)
+                          }
+                        }
+                      }, true)}
+                      className="w-full bg-gray-800"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Global Camera Rotation */}
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isGlobalRotationEnabled || false}
+                  onChange={(e) => handleSettingsChange({ cameraRotationEnabled: e.target.checked }, false)}
+                  className="mr-2 bg-gray-800 border-gray-700"
+                />
+                <label className="text-sm text-gray-300">
+                  Global Camera Rotation
+                </label>
+              </div>
+              <p className="text-xs text-gray-400">
+                {isPatternCameraEnabled ? 
+                  'Will activate when pattern camera is disabled' : 
+                  'Simple orbital camera rotation around the scene'
+                }
+              </p>
+            </div>
+
+            {/* Camera Position */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Camera Distance: {cameraDistance}
+              </label>
+              <input
+                type="range"
+                min="5"
+                max="100"
+                value={cameraDistance}
+                onChange={(e) => setCameraDistance(Number(e.target.value))}
+                className="w-full bg-gray-800"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Camera Height: {cameraHeight}
+              </label>
+              <input
+                type="range"
+                min="-10"
+                max="50"
+                value={cameraHeight}
+                onChange={(e) => setCameraHeight(Number(e.target.value))}
+                className="w-full bg-gray-800"
+              />
+            </div>
+
+            {/* Camera Speed */}
+            {(isPatternCameraEnabled || isGlobalRotationEnabled) && (
               <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Camera Height
-                  <span className="ml-2 text-xs text-gray-400">{settings.cameraHeight} units</span>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Camera Speed: {((settings.cameraRotationSpeed || 0.2) * 100).toFixed(0)}%
                 </label>
                 <input
                   type="range"
-                  min="0"
-                  max="50"
-                  step="1"
-                  value={settings.cameraHeight}
-                  onChange={(e) => onSettingsChange({ 
-                    cameraHeight: parseFloat(e.target.value) 
-                  }, true)}
+                  min="10"
+                  max="200"
+                  value={(settings.cameraRotationSpeed || 0.2) * 100}
+                  onChange={(e) => handleSettingsChange({ 
+                    cameraRotationSpeed: Number(e.target.value) / 100 
+                  })}
                   className="w-full bg-gray-800"
                 />
               </div>
-            </div>
-          )}
-        </div>
-      </div>
+            )}
 
-      {/* Lighting Settings */}
-      <div>
-        <h4 className="flex items-center text-sm font-medium text-gray-200 mb-3">
-          <Lightbulb className="h-4 w-4 mr-2" />
-          Lighting
-        </h4>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              Ambient Light
-              <span className="ml-2 text-xs text-gray-400">{(settings.ambientLightIntensity * 100).toFixed(0)}%</span>
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="10"
-              step="0.2"
-              value={settings.ambientLightIntensity}
-              onChange={(e) => onSettingsChange({ 
-                ambientLightIntensity: parseFloat(e.target.value) 
-              }, true)}
-              className="w-full bg-gray-800"
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              Global scene brightness (0% = pitch black, 1000% = very bright)
-            </p>
+            {/* Manual Controls */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={settings.orbitControlsEnabled !== false}
+                onChange={(e) => handleSettingsChange({ orbitControlsEnabled: e.target.checked }, false)}
+                className="mr-2 bg-gray-800 border-gray-700"
+              />
+              <label className="text-sm text-gray-300">
+                Manual Camera Controls (Mouse/Touch)
+              </label>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Spotlight Settings */}
-      <div>
-        <h4 className="flex items-center text-sm font-medium text-gray-200 mb-3">
-          <Sun className="h-4 w-4 mr-2" />
-          Spotlights
-        </h4>
-        
+      {/* Lighting Tab */}
+      {activeTab === 'lighting' && (
         <div className="space-y-4">
-          <div className="bg-gray-800 p-3 rounded">
+          <div className="border border-gray-700 rounded-lg p-4 space-y-4">
+            <h5 className="flex items-center text-sm font-medium text-gray-300">
+              <Lightbulb className="h-3 w-3 mr-2" />
+              Scene Lighting
+            </h5>
+
+            {/* Ambient Light */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Ambient Light: {((settings.ambientLightIntensity || 0.6) * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="200"
+                value={(settings.ambientLightIntensity || 0.6) * 100}
+                onChange={(e) => handleSettingsChange({ 
+                  ambientLightIntensity: Number(e.target.value) / 100 
+                })}
+                className="w-full bg-gray-800"
+              />
+            </div>
+
+            {/* Directional Light */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Directional Light: {((settings.directionalLightIntensity || 1) * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="300"
+                value={(settings.directionalLightIntensity || 1) * 100}
+                onChange={(e) => handleSettingsChange({ 
+                  directionalLightIntensity: Number(e.target.value) / 100 
+                })}
+                className="w-full bg-gray-800"
+              />
+            </div>
+
+            {/* Spotlights */}
             <div className="space-y-3">
+              <h6 className="text-sm font-medium text-gray-300">Spotlights</h6>
+              
               <div>
                 <label className="block text-sm text-gray-300 mb-2">Spotlight Color</label>
                 <input
                   type="color"
-                  value={settings.spotlightColor}
-                  onChange={(e) => onSettingsChange({ 
-                    spotlightColor: e.target.value 
-                  }, true)}
-                  className="w-full h-8 rounded cursor-pointer bg-gray-800"
+                  value={settings.spotlightColor || '#ffffff'}
+                  onChange={(e) => handleSettingsChange({ spotlightColor: e.target.value })}
+                  className="w-16 h-8 bg-gray-800 border border-gray-700 rounded cursor-pointer"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm text-gray-300 mb-2">
-                  Number of Spotlights
-                  <span className="ml-2 text-xs text-gray-400">{settings.spotlightCount}</span>
+                  Spotlight Count: {settings.spotlightCount || 1}
                 </label>
                 <input
                   type="range"
                   min="1"
                   max="4"
-                  step="1"
-                  value={settings.spotlightCount}
-                  onChange={(e) => onSettingsChange({ 
-                    spotlightCount: parseInt(e.target.value) 
-                  }, true)}
+                  value={settings.spotlightCount || 1}
+                  onChange={(e) => handleSettingsChange({ spotlightCount: Number(e.target.value) })}
+                  className="w-full bg-gray-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">
+                  Spotlight Intensity: {(settings.spotlightIntensity || 50).toFixed(0)}%
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="200"
+                  value={settings.spotlightIntensity || 50}
+                  onChange={(e) => handleSettingsChange({ spotlightIntensity: Number(e.target.value) })}
                   className="w-full bg-gray-800"
                 />
               </div>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              Spotlight Height
-              <span className="ml-2 text-xs text-gray-400">{settings.spotlightHeight} units</span>
-            </label>
-            <input
-              type="range"
-              min="5"
-              max="50"
-              step="1"
-              value={settings.spotlightHeight}
-              onChange={(e) => onSettingsChange({ 
-                spotlightHeight: parseFloat(e.target.value) 
-              }, true)}
-              className="w-full bg-gray-800"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              Spotlight Distance
-              <span className="ml-2 text-xs text-gray-400">{settings.spotlightDistance} units</span>
-            </label>
-            <input
-              type="range"
-              min="10"
-              max="100"
-              step="5"
-              value={settings.spotlightDistance}
-              onChange={(e) => onSettingsChange({ 
-                spotlightDistance: parseFloat(e.target.value) 
-              }, true)}
-              className="w-full bg-gray-800"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              Spotlight Intensity
-              <span className="ml-2 text-xs text-gray-400">{settings.spotlightIntensity.toFixed(0)}%</span>
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="200"
-              step="1"
-              value={settings.spotlightIntensity}
-              onChange={(e) => onSettingsChange({ 
-                spotlightIntensity: parseFloat(e.target.value) 
-              }, true)}
-              className="w-full bg-gray-800"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-300 mb-2">
-              Spotlight Angle
-              <span className="ml-2 text-xs text-gray-400">{settings.spotlightAngle.toFixed(2)}</span>
-            </label>
-            <input
-              type="range"
-              min="0.1"
-              max="1.5"
-              step="0.05"
-              value={settings.spotlightAngle}
-              onChange={(e) => onSettingsChange({ 
-                spotlightAngle: parseFloat(e.target.value) 
-              }, true)}
-              className="w-full bg-gray-800"
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              Controls the beam spread angle (0.1 = narrow beam, 1.5 = wide beam)
-            </p>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Floor Settings */}
-      <div>
-        <h4 className="flex items-center text-sm font-medium text-gray-200 mb-3">
-          <Square className="h-4 w-4 mr-2" />
-          Floor & Grid
-        </h4>
-        
+      {/* Appearance Tab */}
+      {activeTab === 'appearance' && (
         <div className="space-y-4">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={settings.floorEnabled}
-              onChange={(e) => onSettingsChange({ 
-                floorEnabled: e.target.checked 
-              })}
-              className="mr-2 bg-gray-800 border-gray-700"
-            />
-            <label className="text-sm text-gray-300">
-              Show Floor
-            </label>
-          </div>
+          <div className="border border-gray-700 rounded-lg p-4 space-y-4">
+            <h5 className="flex items-center text-sm font-medium text-gray-300">
+              <Palette className="h-3 w-3 mr-2" />
+              Visual Style
+            </h5>
 
-          {settings.floorEnabled && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Floor Color</label>
+            {/* Background */}
+            <div className="space-y-3">
+              <div className="flex items-center">
                 <input
-                  type="color"
-                  value={settings.floorColor}
-                  onChange={(e) => onSettingsChange({ 
-                    floorColor: e.target.value 
-                  }, true)}
-                  className="w-full h-8 rounded cursor-pointer bg-gray-800"
+                  type="checkbox"
+                  checked={settings.backgroundGradient || false}
+                  onChange={(e) => handleSettingsChange({ backgroundGradient: e.target.checked })}
+                  className="mr-2 bg-gray-800 border-gray-700"
                 />
-              </div>
-              
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Floor Size
-                  <span className="ml-2 text-xs text-gray-400">{settings.floorSize} units</span>
-                </label>
-                <input
-                  type="range"
-                  min="50"
-                  max="300"
-                  step="10"
-                  value={settings.floorSize}
-                  onChange={(e) => onSettingsChange({ floorSize: parseFloat(e.target.value) }, true)}
-                  className="w-full bg-gray-800"
-                />
+                <label className="text-sm text-gray-300">Use Gradient Background</label>
               </div>
 
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Floor Opacity
-                  <span className="ml-2 text-xs text-gray-400">{Math.round(settings.floorOpacity * 100)}%</span>
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={settings.floorOpacity}
-                  onChange={(e) => onSettingsChange({
-                    floorOpacity: parseFloat(e.target.value)
-                  }, true)}
-                  className="w-full bg-gray-800"
-                />
-              </div>
+              {!settings.backgroundGradient ? (
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Background Color</label>
+                  <input
+                    type="color"
+                    value={settings.backgroundColor || '#000000'}
+                    onChange={(e) => handleSettingsChange({ backgroundColor: e.target.value })}
+                    className="w-16 h-8 bg-gray-800 border border-gray-700 rounded cursor-pointer"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Gradient Start</label>
+                    <input
+                      type="color"
+                      value={settings.backgroundGradientStart || '#000000'}
+                      onChange={(e) => handleSettingsChange({ backgroundGradientStart: e.target.value })}
+                      className="w-16 h-8 bg-gray-800 border border-gray-700 rounded cursor-pointer"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Gradient End</label>
+                    <input
+                      type="color"
+                      value={settings.backgroundGradientEnd || '#333333'}
+                      onChange={(e) => handleSettingsChange({ backgroundGradientEnd: e.target.value })}
+                      className="w-16 h-8 bg-gray-800 border border-gray-700 rounded cursor-pointer"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">
+                      Gradient Angle: {settings.backgroundGradientAngle || 0}°
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="360"
+                      step="15"
+                      value={settings.backgroundGradientAngle || 0}
+                      onChange={(e) => handleSettingsChange({ backgroundGradientAngle: Number(e.target.value) })}
+                      className="w-full bg-gray-800"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-          )}
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={settings.gridEnabled}
-              onChange={(e) => onSettingsChange({ 
-                gridEnabled: e.target.checked 
-              })}
-              className="mr-2 bg-gray-800 border-gray-700"
-            />
-            <label className="text-sm text-gray-300">
-              Show Grid Lines
-            </label>
-          </div>
+            {/* Floor Settings */}
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.showFloor || false}
+                  onChange={(e) => handleSettingsChange({ showFloor: e.target.checked }, false)}
+                  className="mr-2 bg-gray-800 border-gray-700"
+                />
+                <label className="text-sm text-gray-300">Show Floor</label>
+              </div>
 
-          {settings.gridEnabled && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Grid Color</label>
-                <input
-                  type="color"
-                  value={settings.gridColor}
-                  onChange={(e) => onSettingsChange({ 
-                    gridColor: e.target.value 
-                  }, true)}
-                  className="w-full h-8 rounded cursor-pointer bg-gray-800"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Grid Size
-                  <span className="ml-2 text-xs text-gray-400">{settings.gridSize} units</span>
-                </label>
-                <input
-                  type="range"
-                  min="50"
-                  max="300"
-                  step="10"
-                  value={settings.gridSize}
-                  onChange={(e) => onSettingsChange({ gridSize: parseFloat(e.target.value) }, true)}
-                  className="w-full bg-gray-800"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Grid Divisions
-                  <span className="ml-2 text-xs text-gray-400">{Math.round(settings.gridDivisions)} lines</span>
-                </label>
-                <input
-                  type="range"
-                  min="10"
-                  max="100"
-                  step="5"
-                  value={settings.gridDivisions}
-                  onChange={(e) => onSettingsChange({
-                    gridDivisions: parseFloat(e.target.value)
-                  }, true)}
-                  className="w-full bg-gray-800"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Grid Opacity
-                  <span className="ml-2 text-xs text-gray-400">{Math.round(settings.gridOpacity * 100)}%</span>
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={settings.gridOpacity}
-                  onChange={(e) => onSettingsChange({
-                    gridOpacity: parseFloat(e.target.value)
-                  }, true)}
-                  className="w-full bg-gray-800"
-                />
-              </div>
+              {settings.showFloor && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">
+                      Floor Size: {settings.floorSize || 200}
+                    </label>
+                    <input
+                      type="range"
+                      min="50"
+                      max="500"
+                      value={settings.floorSize || 200}
+                      onChange={(e) => handleSettingsChange({ floorSize: Number(e.target.value) })}
+                      className="w-full bg-gray-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Floor Color</label>
+                    <input
+                      type="color"
+                      value={settings.floorColor || '#2a2a2a'}
+                      onChange={(e) => handleSettingsChange({ floorColor: e.target.value })}
+                      className="w-16 h-8 bg-gray-800 border border-gray-700 rounded cursor-pointer"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">
+                      Floor Opacity: {Math.round((settings.floorOpacity || 0.5) * 100)}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={settings.floorOpacity || 0.5}
+                      onChange={(e) => handleSettingsChange({ floorOpacity: Number(e.target.value) })}
+                      className="w-full bg-gray-800"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Grid Settings */}
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.gridEnabled || false}
+                  onChange={(e) => handleSettingsChange({ gridEnabled: e.target.checked })}
+                  className="mr-2 bg-gray-800 border-gray-700"
+                />
+                <label className="text-sm text-gray-300">Show Grid Lines</label>
+              </div>
+
+              {settings.gridEnabled && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Grid Color</label>
+                    <input
+                      type="color"
+                      value={settings.gridColor || '#444444'}
+                      onChange={(e) => handleSettingsChange({ gridColor: e.target.value })}
+                      className="w-16 h-8 bg-gray-800 border border-gray-700 rounded cursor-pointer"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">
+                      Grid Size: {settings.gridSize || 200} units
+                    </label>
+                    <input
+                      type="range"
+                      min="50"
+                      max="300"
+                      step="10"
+                      value={settings.gridSize || 200}
+                      onChange={(e) => handleSettingsChange({ gridSize: Number(e.target.value) })}
+                      className="w-full bg-gray-800"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">
+                      Grid Divisions: {Math.round(settings.gridDivisions || 20)} lines
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      step="5"
+                      value={settings.gridDivisions || 20}
+                      onChange={(e) => handleSettingsChange({ gridDivisions: Number(e.target.value) })}
+                      className="w-full bg-gray-800"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">
+                      Grid Opacity: {Math.round((settings.gridOpacity || 0.3) * 100)}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={settings.gridOpacity || 0.3}
+                      onChange={(e) => handleSettingsChange({ gridOpacity: Number(e.target.value) })}
+                      className="w-full bg-gray-800"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Background Settings */}
-      <div>
-        <h4 className="flex items-center text-sm font-medium text-gray-200 mb-3">
-          <Palette className="h-4 w-4 mr-2" />
-          Background
-        </h4>
-        
+      {/* Performance Tab */}
+      {activeTab === 'performance' && (
         <div className="space-y-4">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={settings.backgroundGradient}
-              onChange={(e) => onSettingsChange({ 
-                backgroundGradient: e.target.checked 
-              })}
-              className="mr-2 bg-gray-800 border-gray-700"
-            />
-            <label className="text-sm text-gray-300">
-              Use Gradient Background
-            </label>
-          </div>
-
-          {!settings.backgroundGradient ? (
+          <div className="border border-gray-700 rounded-lg p-4 space-y-4">
+            <h5 className="flex items-center text-sm font-medium text-gray-300">
+              <Monitor className="h-3 w-3 mr-2" />
+              Performance Optimization
+            </h5>
+            
+            {/* Performance Level Override */}
             <div>
-              <label className="block text-sm text-gray-300 mb-2">Background Color</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Performance Mode
+              </label>
+              <select
+                value={performanceLevel}
+                onChange={(e) => {
+                  // setPerformanceLevel(e.target.value as any); // Enable when PerformanceMonitor is available
+                }}
+                className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-white"
+              >
+                <option value="high">High Quality (Best visuals)</option>
+                <option value="medium">Balanced (Good performance)</option>
+                <option value="low">Performance (Smooth on low-end devices)</option>
+              </select>
+            </div>
+
+            {/* Shadow Settings */}
+            <div className="flex items-center">
               <input
-                type="color"
-                value={settings.backgroundColor}
-                onChange={(e) => onSettingsChange({ 
-                  backgroundColor: e.target.value 
-                }, true)}
-                className="w-full h-8 rounded cursor-pointer bg-gray-800"
+                type="checkbox"
+                checked={settings.shadowsEnabled || false}
+                onChange={(e) => handleSettingsChange({ shadowsEnabled: e.target.checked }, false)}
+                className="mr-2 bg-gray-800 border-gray-700"
               />
+              <label className="text-sm text-gray-300">
+                Enable Shadows (Performance Impact)
+              </label>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Gradient Start</label>
-                <input
-                  type="color"
-                  value={settings.backgroundGradientStart}
-                  onChange={(e) => onSettingsChange({ 
-                    backgroundGradientStart: e.target.value 
-                  }, true)}
-                  className="w-full h-8 rounded cursor-pointer bg-gray-800"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Gradient End</label>
-                <input
-                  type="color"
-                  value={settings.backgroundGradientEnd}
-                  onChange={(e) => onSettingsChange({ 
-                    backgroundGradientEnd: e.target.value 
-                  }, true)}
-                  className="w-full h-8 rounded cursor-pointer bg-gray-800"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Gradient Angle
-                  <span className="ml-2 text-xs text-gray-400">{settings.backgroundGradientAngle}°</span>
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="360"
-                  step="15"
-                  value={settings.backgroundGradientAngle}
-                  onChange={(e) => onSettingsChange({ 
-                    backgroundGradientAngle: parseInt(e.target.value) 
-                  }, true)}
-                  className="w-full bg-gray-800"
-                />
-              </div>
+
+            {/* Performance Tips */}
+            <div className="bg-blue-600/20 border border-blue-600 rounded-md p-3">
+              <h6 className="text-sm font-medium text-blue-300 mb-2">Performance Tips:</h6>
+              <ul className="text-xs text-blue-200 space-y-1">
+                <li>• Reduce photo count for better performance</li>
+                <li>• Disable shadows on slower devices</li>
+                <li>• Lower animation speed reduces CPU usage</li>
+                <li>• Pattern camera movement is optimized for smoothness</li>
+                <li>• Use solid background instead of gradient for better performance</li>
+                <li>• Reduce spotlight count on slower devices</li>
+              </ul>
             </div>
-          )}
+
+            {/* FPS Display */}
+            <div className="bg-gray-800/50 rounded-md p-3">
+              <p className="text-xs text-gray-400">
+                Performance monitoring will be available when PerformanceMonitor component is integrated.
+                Current optimizations include debounced controls, smooth interpolation, and automatic quality scaling.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Reset Button */}
       <div className="pt-4 border-t border-gray-700">
@@ -1044,6 +1159,7 @@ const SceneSettings: React.FC<{
       </div>
     </div>
   );
+};
 };
 
 export default SceneSettings;

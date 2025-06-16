@@ -1,7 +1,8 @@
+// src/components/three/patterns/SpiralPattern.tsx - FIXED: Complete spiral pattern with proper inheritance
 import { BasePattern, type PatternState, type Position } from './BasePattern';
 
 export class SpiralPattern extends BasePattern {
-  generatePositions(time: number): PatternState {
+  protected generatePositionsInternal(time: number): PatternState {
     const positions: Position[] = [];
     const rotations: [number, number, number][] = [];
 
@@ -59,44 +60,41 @@ export class SpiralPattern extends BasePattern {
       // Calculate angle with height-based rotation speed
       // Photos at the bottom rotate slower, creating a realistic vortex effect
       const heightSpeedFactor = 0.3 + normalizedHeight * 0.7; // Slower at bottom
-      const angle = this.settings.animationEnabled ? 
-        (animationTime * rotationSpeed * heightSpeedFactor + i * 0.5 + angleOffset) : 
-        (i * 0.5 + angleOffset);
+      let angle = angleOffset;
       
-      // Calculate position
-      let x = Math.cos(angle) * radius;
-      let z = Math.sin(angle) * radius;
-      
-      // Add turbulence for more realistic tornado effect
       if (this.settings.animationEnabled) {
-        const turbulenceStrength = isOrbital ? 2 : 1;
-        const turbulenceX = Math.sin(animationTime * 3 + y * 0.1 + i) * turbulenceStrength;
-        const turbulenceZ = Math.cos(animationTime * 2.5 + y * 0.1 + i * 1.3) * turbulenceStrength;
-        
-        x += turbulenceX;
-        z += turbulenceZ;
+        angle += animationTime * rotationSpeed * heightSpeedFactor;
       }
       
-      positions.push([x, y + verticalWobble, z]);
+      // Calculate final position
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const finalY = y + verticalWobble;
       
-      // Calculate rotation to face camera
+      positions.push([x, finalY, z]);
+      
+      // Calculate rotation
       if (this.settings.photoRotation) {
-        // Photos face outward from the center of the tornado
-        const facingAngle = Math.atan2(x, z);
+        // Photos face the direction they're moving (tangent to the spiral)
+        const tangentAngle = angle + Math.PI / 2;
         
-        // Add dynamic tilting based on height and motion
-        const tiltAmount = isOrbital ? 0.2 : 0.1;
-        const rotationX = this.settings.animationEnabled ? 
-          Math.sin(animationTime * 1.5 + i * 0.3) * tiltAmount : 0;
-        const rotationZ = this.settings.animationEnabled ? 
-          Math.cos(animationTime * 1.2 + i * 0.4) * tiltAmount : 0;
+        let rotationX = 0;
+        let rotationY = tangentAngle;
+        let rotationZ = 0;
         
-        rotations.push([rotationX, facingAngle, rotationZ]);
+        if (this.settings.animationEnabled) {
+          // Add some dynamic rotation based on movement
+          rotationX = Math.sin(animationTime + i * 0.5) * 0.1;
+          rotationZ = Math.cos(animationTime * 0.8 + i * 0.3) * 0.05;
+          
+          // Tilt based on spiral position
+          const tilt = normalizedHeight * 0.2; // More tilt at higher positions
+          rotationX += tilt;
+        }
+        
+        rotations.push([rotationX, rotationY, rotationZ]);
       } else {
-        // Even without face-camera enabled, add some tilt for dynamic feel
-        const rotationY = angle;
-        const tilt = normalizedHeight * 0.3; // More tilt at top
-        rotations.push([tilt, rotationY, 0]);
+        rotations.push([0, 0, 0]);
       }
     }
 

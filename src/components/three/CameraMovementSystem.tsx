@@ -1,4 +1,4 @@
-// src/components/three/CameraMovementSystem.tsx - OPTIMIZED: Conflict Resolution & Smooth Movement
+// src/components/three/CameraMovementSystem.tsx - FIXED: Complete camera movement system
 import React, { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -42,7 +42,7 @@ const CameraMovementSystem: React.FC<CameraMovementSystemProps> = ({
   useEffect(() => {
     stateRef.current.smoothPosition.copy(camera.position);
     stateRef.current.smoothTarget.set(0, settings.cameraLookAtY || 0, 0);
-  }, []);
+  }, [camera.position, settings.cameraLookAtY]);
 
   const baseDistance = settings.cameraDistance || 25;
   const globalSpeed = (settings.cameraRotationSpeed || 0.2) * 0.5;
@@ -66,7 +66,7 @@ const CameraMovementSystem: React.FC<CameraMovementSystemProps> = ({
 
     // CONFLICT RESOLUTION: Determine camera movement priority
     const pattern = settings.animationPattern;
-    const isPatternCameraEnabled = settings.patterns[pattern]?.cameraMovementEnabled;
+    const isPatternCameraEnabled = settings.patterns?.[pattern]?.cameraMovementEnabled;
     const isGlobalRotationEnabled = settings.cameraRotationEnabled;
 
     // PRIORITY SYSTEM:
@@ -187,7 +187,10 @@ function calculateFloatCamera(
   settings: SceneSettings
 ) {
   const time = state.time;
-  const orbitRadius = settings.patterns.float.cameraOrbitRadius || baseDistance;
+  const patterns = settings.patterns || {};
+  const floatSettings = patterns.float || {};
+  const orbitRadius = floatSettings.cameraOrbitRadius || baseDistance;
+  const intensity = floatSettings.cameraFloatIntensity || 1;
   
   // 120-second perfect loop for ultra-smooth movement
   const cycleDuration = 120;
@@ -200,14 +203,14 @@ function calculateFloatCamera(
   
   // Gentle height variation
   const baseHeight = settings.cameraHeight || 10;
-  const heightVariation = Math.sin(phase * 0.5) * 3;
+  const heightVariation = Math.sin(phase * 0.5) * 3 * intensity;
   const y = baseHeight + heightVariation;
   
   targetPosition.set(x, y, z);
   
   // Gentle look-at variation
-  const lookAtX = Math.sin(phase * 0.3) * 2;
-  const lookAtY = (settings.cameraLookAtY || 0) + Math.cos(phase * 0.2) * 1;
+  const lookAtX = Math.sin(phase * 0.3) * 2 * intensity;
+  const lookAtY = (settings.cameraLookAtY || 0) + Math.cos(phase * 0.2) * 1 * intensity;
   targetLookAt.set(lookAtX, lookAtY, 0);
 }
 
@@ -220,7 +223,9 @@ function calculateWaveCamera(
   settings: SceneSettings
 ) {
   const time = state.time;
-  const amplitude = settings.patterns.wave.cameraWaveAmplitude || 1;
+  const patterns = settings.patterns || {};
+  const waveSettings = patterns.wave || {};
+  const amplitude = waveSettings.cameraWaveAmplitude || 1;
   
   // 90-second perfect loop
   const cycleDuration = 90;
@@ -252,10 +257,12 @@ function calculateSpiralCamera(
   settings: SceneSettings
 ) {
   const time = state.time;
-  const orbitSpeed = settings.patterns.spiral.cameraOrbitSpeed || 1;
-  const orbitRadius = settings.patterns.spiral.cameraOrbitRadius || 20;
-  const heightVariation = settings.patterns.spiral.cameraHeightVariation !== false;
-  const direction = settings.patterns.spiral.cameraOrbitDirection === 'counterclockwise' ? -1 : 1;
+  const patterns = settings.patterns || {};
+  const spiralSettings = patterns.spiral || {};
+  const orbitSpeed = spiralSettings.cameraOrbitSpeed || 1;
+  const orbitRadius = spiralSettings.cameraOrbitRadius || 20;
+  const heightVariation = spiralSettings.cameraHeightVariation !== false;
+  const direction = spiralSettings.cameraOrbitDirection === 'counterclockwise' ? -1 : 1;
   
   // 100-second perfect loop
   const cycleDuration = 100;
@@ -299,54 +306,28 @@ function calculateGridCamera(
 ) {
   const time = state.time;
   
-  // 150-second cycle for thorough grid showcase
-  const cycleDuration = 150;
+  // 80-second perfect loop
+  const cycleDuration = 80;
   const cycleTime = (time % cycleDuration) / cycleDuration;
   const phase = cycleTime * Math.PI * 2;
   
-  // Rectangular orbit to showcase grid structure
-  const t = cycleTime * 4; // 4 sides of rectangle
-  const side = Math.floor(t) % 4;
-  const sideProgress = t - Math.floor(t);
+  // Square orbital movement to showcase grid
+  const angle = phase;
+  const radius = baseDistance;
   
-  const gridSize = Math.min(baseDistance * 1.5, 40);
-  let x: number, z: number;
+  const x = Math.cos(angle) * radius;
+  const z = Math.sin(angle) * radius;
   
-  switch (side) {
-    case 0: // Top side
-      x = -gridSize + (sideProgress * 2 * gridSize);
-      z = gridSize;
-      break;
-    case 1: // Right side
-      x = gridSize;
-      z = gridSize - (sideProgress * 2 * gridSize);
-      break;
-    case 2: // Bottom side
-      x = gridSize - (sideProgress * 2 * gridSize);
-      z = -gridSize;
-      break;
-    case 3: // Left side
-      x = -gridSize;
-      z = -gridSize + (sideProgress * 2 * gridSize);
-      break;
-    default:
-      x = gridSize;
-      z = 0;
-  }
-  
-  // Gentle height variation
+  // Gentle height oscillation
   const baseHeight = settings.cameraHeight || 10;
-  const heightVariation = Math.sin(phase * 0.5) * 5;
-  const y = baseHeight + heightVariation + 5; // Slightly elevated for grid overview
+  const heightOscillation = Math.sin(phase * 0.5) * 2;
+  const y = baseHeight + heightOscillation;
   
   targetPosition.set(x, y, z);
-  
-  // Look at center with slight variation
-  const lookAtY = (settings.cameraLookAtY || 0) + Math.sin(phase * 0.3) * 2;
-  targetLookAt.set(0, lookAtY, 0);
+  targetLookAt.set(0, settings.cameraLookAtY || 0, 0);
 }
 
-// Default Pattern: Simple orbital movement
+// Default camera movement (fallback)
 function calculateDefaultCamera(
   targetPosition: THREE.Vector3,
   targetLookAt: THREE.Vector3,
@@ -355,15 +336,12 @@ function calculateDefaultCamera(
   settings: SceneSettings
 ) {
   const time = state.time;
-  
-  // Simple 80-second orbit
-  const angle = (time * 0.5) % (Math.PI * 2);
+  const angle = time * 0.5; // Simple rotation
   const radius = baseDistance;
-  const height = settings.cameraHeight || 10;
   
   const x = Math.cos(angle) * radius;
   const z = Math.sin(angle) * radius;
-  const y = height + Math.sin(time * 0.3) * 2;
+  const y = settings.cameraHeight || 10;
   
   targetPosition.set(x, y, z);
   targetLookAt.set(0, settings.cameraLookAtY || 0, 0);
